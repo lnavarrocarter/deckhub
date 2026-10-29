@@ -17,7 +17,7 @@ La tienda ([decky-plugin-database](https://github.com/SteamDeckHomebrew/decky-pl
 - [ ] Comprobar el build con la CLI oficial de Decky (la que usa la tienda).
 - [ ] Avisar en la interfaz si la red no llega a SteamGridDB por IPv4 y ofrecer activar IPv6.
 - [ ] Probar en Steam Deck OLED y en una instalación limpia.
-- [ ] Enviar el PR a `decky-plugin-database`.
+- [x] ~~Enviar el PR a `decky-plugin-database`~~: descartado, la política de la tienda no acepta código escrito con IA. En su lugar, actualizador propio desde GitHub Releases.
 
 ## Antes de publicar en Reddit
 

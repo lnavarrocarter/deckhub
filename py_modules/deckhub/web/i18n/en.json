@@ -736,5 +736,19 @@
  "Cambiar el archivo de swap a {} GB": "Resize the swap file to {} GB",
  "Carátulas de tus juegos, temas del modo juego, videos de arranque y fondos.": "Your games' artwork, Game Mode themes, boot videos and wallpapers.",
  "Temas": "Themes",
- "Fondos": "Wallpapers"
+ "Fondos": "Wallpapers",
+ "Actualizaciones": "Updates",
+ "Buscar actualizaciones": "Check for updates",
+ "Actualizar ahora": "Update now",
+ "Hay una versión nueva: {}": "A new version is available: {}",
+ "· publicada {}": "· released {}",
+ "Novedades": "What's new",
+ "Ver en GitHub": "View on GitHub",
+ "✓ Tienes la última versión ({}).": "✓ You have the latest version ({}).",
+ "DeckHub revisa GitHub cada 6 horas y te avisa en el menú rápido del Deck.": "DeckHub checks GitHub every 6 hours and lets you know in the Deck's Quick Access menu.",
+ "Confirma la actualización en la pantalla del Deck": "Confirm the update on the Deck's screen",
+ "GitHub no responde: {}": "GitHub is not responding: {}",
+ "Ya tienes la última versión ({}).": "You already have the latest version ({}).",
+ "No pude descargar la actualización: {}": "Could not download the update: {}",
+ "· tienes la {}": "· you have {}"
 }

@@ -630,6 +630,11 @@
   </section>
 
   <section class="tab" id="tab-settings">
+    <div class="card" id="updCard">
+      <h2>Actualizaciones</h2>
+      <div id="updBody"><p class="sub">Buscando…</p></div>
+      <div class="toolbar" style="margin:10px 0 0"><button class="b" id="updCheck">Buscar actualizaciones</button><button class="b primary" id="updGo" hidden>Actualizar ahora</button></div>
+    </div>
     <div class="card">
       <h2>Acceso al panel</h2>
       <div class="toolbar"><label><input type="checkbox" id="lanAccess"> Permitir el acceso desde la red (puerto 8765)</label></div>
@@ -2317,7 +2322,23 @@ $("artAll").onclick = async () => {
   const r = await act(() => api("/api/shortcuts/art/refresh", {}));
   toast(`Buscando portadas para ${r.queued} juegos · aparecerán en Steam en un minuto`);
 };
-loaders.settings = loadSettings;
+// Actualizaciones desde GitHub Releases (DeckHub no está en la tienda de Decky).
+async function loadUpdates(force) {
+  let u;
+  try { u = await api("/api/updates" + (force ? "?force=1" : "")); } catch (e) { $("updBody").innerHTML = `<p class="sub">Error: ${esc(e.message)}</p>`; return; }
+  setNavCount("settings", u.newer ? "1" : 0);
+  $("updGo").hidden = !u.newer;
+  $("updBody").innerHTML = u.newer
+    ? `<p style="margin:0 0 6px"><b>Hay una versión nueva: ${esc(u.latest)}</b> <span class="sub">· tienes la ${esc(u.current)}</span> <span class="sub">${u.published ? "· publicada " + date(Date.parse(u.published) / 1000) : ""}</span></p>
+       ${u.notes ? `<details><summary class="sub" style="cursor:pointer">Novedades</summary><pre class="cmd" style="white-space:pre-wrap">${esc(u.notes.slice(0, 2000))}</pre></details>` : ""}
+       ${u.url ? `<a href="${esc(u.url)}" target="_blank">Ver en GitHub</a>` : ""}`
+    : `<p style="margin:0">✓ Tienes la última versión (${esc(u.current)}).</p><p class="sub" style="margin:4px 0 0">DeckHub revisa GitHub cada 6 horas y te avisa en el menú rápido del Deck.</p>`;
+}
+$("updCheck").onclick = () => loadUpdates(true);
+$("updGo").onclick = async () => {
+  await act(() => api("/api/updates/install", {}), "Confirma la actualización en la pantalla del Deck");
+};
+loaders.settings = () => { loadSettings(); loadUpdates(); };
 
 // --- Paquetes -----------------------------------------------------------------
 async function loadPackages() {
@@ -2401,7 +2422,10 @@ $("onboardHide").onclick = () => { try { localStorage.setItem("deckhub.onboard.h
 initI18n().then(async () => {
   loadOnboarding();
   // Con sesión iniciada, la campana muestra las alertas de precio sin leer desde el inicio.
-  try { if ((await (await fetch("/api/auth")).json()).authed) { store = await api("/api/store"); updateAlertBadges(); } } catch {}
+  try { if ((await (await fetch("/api/auth")).json()).authed) {
+    store = await api("/api/store"); updateAlertBadges();
+    api("/api/updates").then(u => setNavCount("settings", u.newer ? "1" : 0)).catch(() => {});
+  } } catch {}
 });
 tick(); setInterval(tick, 2000);
 try { const t = localStorage.getItem("deckhub.tab"); if (t && t !== "summary") document.querySelector(`#tabs button[data-tab="${t}"]`)?.click(); } catch {}

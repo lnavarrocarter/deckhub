@@ -19,6 +19,32 @@ const setMounted = callable<[string, boolean], { ok: boolean; error?: string }>(
 type PerfInfo = { done: number; total: number; pending: string[]; ready: boolean; swap_gb: number } | null;
 const getPerf = callable<[], PerfInfo>("get_perf");
 const applyPerf = callable<[string[]], { ok: boolean; error?: string }>("apply_perf");
+type UpdateInfo = { current: string; latest: string | null; newer: boolean } | null;
+const getUpdate = callable<[], UpdateInfo>("get_update");
+const installUpdate = callable<[], { ok: boolean; error?: string }>("install_update");
+
+async function startUpdate() {
+  const r = await installUpdate();
+  toaster.toast({ title: "DeckHub", body: r.ok ? t("updateConfirm") : r.error ?? t("error") });
+}
+
+// Versión nueva en GitHub Releases: arriba del todo, con un toque para actualizar.
+function Update() {
+  const [u, setU] = useState<UpdateInfo>(null);
+  useEffect(() => {
+    getUpdate().then(setU);
+  }, []);
+  if (!u?.newer) return null;
+  return (
+    <PanelSection title={t("updateAvailable", { v: u.latest ?? "" })}>
+      <PanelSectionRow>
+        <ButtonItem layout="below" onClick={startUpdate}>
+          {t("updateNow")}
+        </ButtonItem>
+      </PanelSectionRow>
+    </PanelSection>
+  );
+}
 
 const gb = (b?: number) =>
   b == null ? "—" : b >= 1e12 ? `${(b / 1e12).toFixed(2)} TB` : `${(b / 1e9).toFixed(1)} GB`;
@@ -237,6 +263,8 @@ function Content() {
 
   return (
     <>
+      <Update />
+
       <PanelSection title={t("system")}>
         <PanelSectionRow>
           <Field label="CPU · GPU" bottomSeparator="none">
@@ -291,6 +319,16 @@ function Content() {
 
 export default definePlugin(() => {
   initLanguage();
+  // Aviso una sola vez por versión nueva (al rato de cargar, para no estorbar al arrancar).
+  const updateTimer = setTimeout(async () => {
+    const u = await getUpdate().catch(() => null);
+    if (!u?.newer || !u.latest) return;
+    try {
+      if (localStorage.getItem("deckhub.updateNotified") === u.latest) return;
+      localStorage.setItem("deckhub.updateNotified", u.latest);
+    } catch {}
+    toaster.toast({ title: "DeckHub", body: t("updateAvailable", { v: u.latest }), duration: 10000, onClick: startUpdate });
+  }, 30000);
   const stopSync = startShortcutSync();
   const stopLibrary = startLibraryReport();
   const stopDownloads = startDownloads();
@@ -300,6 +338,7 @@ export default definePlugin(() => {
     content: <Content />,
     icon: <FaHeartbeat />,
     onDismount: () => {
+      clearTimeout(updateTimer);
       stopSync();
       stopLibrary();
       stopDownloads();

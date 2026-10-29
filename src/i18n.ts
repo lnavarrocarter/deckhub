@@ -61,6 +61,9 @@ const STRINGS = {
     applyRecommended: "Aplicar recomendados",
     tuningApplied: "Ajustes de memoria aplicados",
     helperMissing: "Instala el ayudante desde el panel web (Rendimiento)",
+    updateAvailable: "Nueva versión {v} disponible",
+    updateNow: "Actualizar DeckHub",
+    updateConfirm: "Confirma la actualización en la ventana de Decky",
   },
   en: {
     loading: "Loading…",
@@ -118,6 +121,9 @@ const STRINGS = {
     applyRecommended: "Apply recommended",
     tuningApplied: "Memory settings applied",
     helperMissing: "Install the helper from the web dashboard (Performance)",
+    updateAvailable: "New version {v} available",
+    updateNow: "Update DeckHub",
+    updateConfirm: "Confirm the update in Decky's window",
   },
 };
 

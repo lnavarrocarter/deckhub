@@ -1,5 +1,9 @@
 # Cambios
 
+## 0.13.0 (2026-10-29)
+
+- Actualizaciones automáticas: DeckHub revisa GitHub Releases cada 6 horas, avisa en el menú rápido y en Ajustes, y se actualiza con un toque (Decky lo instala con su confirmación y comprueba la huella SHA-256 del zip). DeckHub no está en la tienda de Decky: su política no acepta código escrito con IA.
+
 ## 0.12.0 (2026-10-29)
 
 - Pestaña «Rendimiento» (y sección en el menú rápido): ajustes de memoria al estilo de CryoUtilities (swappiness, compactación proactiva, page lock unfairness, desfragmentación de huge pages), tamaño del archivo de swap y guía para la VRAM. Muestra valores actuales y recomendados, aplica por ajuste, persiste al reiniciar y se revierte con un botón.

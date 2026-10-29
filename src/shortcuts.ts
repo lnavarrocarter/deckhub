@@ -51,7 +51,7 @@ async function applyArt() {
 }
 
 type DeckyAction =
-  | { id: string; type: "install"; name: string; version: string; hash: string; artifact: string }
+  | { id: string; type: "install"; name: string; version: string; hash: string; artifact: string; install_type?: number }
   | { id: string; type: "css_reset" }
   | { id: string; type: "css_install"; name: string; theme_id: string; deps: number }
   | { id: string; type: "css_state"; name: string; active: boolean }
@@ -111,7 +111,8 @@ async function applyActions() {
     await ackAction(a.id); // antes, para no repetirla si Decky se recarga
     try {
       if (a.type === "install") {
-        await backend.call("utilities/install_plugin", a.artifact, a.name, a.version, a.hash, 0 /* INSTALL */);
+        // 0 = instalar, 2 = actualizar (DeckHub a sí mismo desde GitHub Releases)
+        await backend.call("utilities/install_plugin", a.artifact, a.name, a.version, a.hash, a.install_type ?? 0);
       } else if (a.type === "css_reset") {
         await cssLoader("reset");
         cssChanged = true;

@@ -221,6 +221,20 @@ class Plugin:
         except Exception:
             return False
 
+    async def get_update(self):
+        """¿Hay una versión nueva de DeckHub en GitHub Releases?"""
+        try:
+            return (await asyncio.to_thread(_request, "/api/updates")).get("data")
+        except Exception:
+            return None
+
+    async def install_update(self):
+        try:
+            r = await asyncio.to_thread(_request, "/api/updates/install", {})
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+        return {"ok": "error" not in r, "error": r.get("error")}
+
     async def get_perf(self):
         """Resumen de los ajustes de memoria para el menú rápido."""
         try:

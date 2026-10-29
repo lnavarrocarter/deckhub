@@ -16,6 +16,8 @@
 
 DeckHub never downloads games, BIOS, firmware or keys, and never buys anything or touches your Steam account.
 
+> **About how it's made:** DeckHub was written with generative AI and reviewed by a human developer. Because the Decky store doesn't accept AI-written code, it is distributed through GitHub Releases and updates itself from there.
+
 ## Install
 
 You need **Decky Loader**. If you don't have it yet: switch to Desktop Mode, open [decky.xyz](https://decky.xyz) in the browser, download the installer and run it; then go back to Game Mode.
@@ -35,7 +37,7 @@ You need **Decky Loader**. If you don't have it yet: switch to Desktop Mode, ope
    - turn on **Network access** and scan the **QR code** with your phone (or type the address on your PC).
 6. The first time you change something, the dashboard asks for the **token**: press **Show token** in the plugin and paste it.
 
-**Update**: install the new zip the same way; your settings are kept.
+**Update**: DeckHub checks for new versions and shows **Update DeckHub** in the Quick Access menu (and in Settings on the dashboard); confirm in Decky's window. Your settings are kept.
 **Uninstall**: Decky → Settings → Plugins → DeckHub → Uninstall. Your settings and backups stay in `~/.config/deckhub` and `~/DeckHub`.
 
 More details and troubleshooting: [docs/install.md](docs/install.md).
@@ -68,6 +70,8 @@ More details and troubleshooting: [docs/install.md](docs/install.md).
 
 DeckHub no descarga juegos, BIOS, firmware ni llaves, y nunca compra nada ni toca tu cuenta de Steam.
 
+> **Cómo está hecho:** DeckHub fue escrito con IA generativa y revisado por un programador. Como la tienda de Decky no acepta código escrito con IA, se distribuye por GitHub Releases y se actualiza desde ahí.
+
 ### Instalación
 
 Necesitas **Decky Loader**. Si no lo tienes: entra al modo escritorio, abre [decky.xyz](https://decky.xyz) en el navegador, descarga el instalador y ejecútalo; luego vuelve al modo juego.
@@ -87,7 +91,7 @@ Necesitas **Decky Loader**. Si no lo tienes: entra al modo escritorio, abre [dec
    - activa **Acceso desde la red** y escanea el **código QR** con el móvil (o escribe la dirección en el PC).
 6. La primera vez que cambies algo, el panel pide el **token**: pulsa **Mostrar token** en el plugin y pégalo.
 
-**Actualizar**: instala el zip nuevo igual; tus ajustes se conservan.
+**Actualizar**: DeckHub busca versiones nuevas y muestra **Actualizar DeckHub** en el menú rápido (y en Ajustes del panel); confirma en la ventana de Decky. Tus ajustes se conservan.
 **Desinstalar**: Decky → Ajustes → Plugins → DeckHub → Desinstalar. Ajustes y respaldos quedan en `~/.config/deckhub` y `~/DeckHub`.
 
 Más detalles y solución de problemas: [docs/instalacion.md](docs/instalacion.md).

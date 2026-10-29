@@ -9,7 +9,7 @@ from aiohttp import web
 
 from . import fileops, jobs
 from . import config
-from .modules import artwork, cheats, custom, emulators, library, packages, perf, playtime, store, roms, saves, shortcuts, storage
+from .modules import artwork, cheats, custom, emulators, library, packages, perf, playtime, store, updates, roms, saves, shortcuts, storage
 
 
 def _ok(data=None, **extra):
@@ -254,6 +254,14 @@ async def downloads_report(request):
 async def downloads_all(request):
     library.download_all()
     return _ok()
+
+
+async def updates_get(request):
+    return _ok(await updates.check(request.query.get("force") == "1"))
+
+
+async def updates_install(request):
+    return _ok(await updates.install())
 
 
 async def perf_get(request):
@@ -644,6 +652,8 @@ def setup(app):
     r.add_get("/api/steam/downloads", downloads_get)
     r.add_post("/api/steam/downloads", downloads_report)
     r.add_post("/api/steam/downloads/all", downloads_all)
+    r.add_get("/api/updates", updates_get)
+    r.add_post("/api/updates/install", updates_install)
     r.add_get("/api/perf", perf_get)
     r.add_post("/api/perf/apply", perf_apply)
     r.add_post("/api/perf/revert", perf_revert)
