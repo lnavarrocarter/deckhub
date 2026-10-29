@@ -171,6 +171,30 @@ async def detail(key):
     raise ValueError(f"clave no válida: {key}")
 
 
+# Cola de descargas de Steam, tal como la envía el plugin.
+DOWNLOADS = Path.home() / ".cache/deckhub/downloads.json"
+
+
+def store_downloads(items):
+    if not isinstance(items, list):
+        raise ValueError("se esperaba una lista")
+    DOWNLOADS.parent.mkdir(parents=True, exist_ok=True)
+    DOWNLOADS.write_text(json.dumps({"updated": time.time(), "items": items[:200]}))
+
+
+def downloads():
+    try:
+        d = json.loads(DOWNLOADS.read_text())
+    except (OSError, ValueError):
+        return {"updated": None, "items": [], "pending": 0, "bytes": 0}
+    pend = [i for i in d["items"] if not i.get("completed") and not i.get("active")]
+    return {**d, "pending": len(pend), "bytes": sum(int(i.get("bytes") or 0) for i in pend)}
+
+
+def download_all():
+    custom._queue_action({"type": "downloads_all"})
+
+
 # Acciones dentro de Steam: las aplica el plugin con SteamClient.
 STEAM_ACTIONS = {"run", "launch_options", "compat_tool", "hidden", "shortcut_launch_options"}
 

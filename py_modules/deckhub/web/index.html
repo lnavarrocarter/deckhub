@@ -211,6 +211,10 @@
   </section>
 
   <section class="tab" id="tab-games">
+    <div class="card" id="dlCard" hidden>
+      <div class="toolbar" style="margin:0"><h2 style="margin:0" class="grow">Descargas de Steam en espera</h2><button class="b primary" id="dlAll">Descargar todo</button></div>
+      <div id="dlList"></div>
+    </div>
     <div class="card">
       <div class="toolbar">
         <div class="seg" id="libSource"><button data-src="" class="on">Todos</button><button data-src="steam">Steam</button><button data-src="rom">Emulación</button><button data-src="shortcut">Otros</button></div>
@@ -804,7 +808,21 @@ const openGameFromEvent = e => {
 };
 $("libGrid").onclick = openGameFromEvent;
 $("gameList").onclick = openGameFromEvent;
-loaders.games = async () => { if (!games) await loadGames(); else loadLibrary(); await loadSteam(); };
+async function loadDownloads() {
+  let d; try { d = await api("/api/steam/downloads"); } catch { return; }
+  const items = d.items.filter(i => !i.completed);
+  $("dlCard").hidden = !items.length;
+  $("dlAll").hidden = !d.pending;
+  $("dlAll").textContent = `Descargar todo (${d.pending} · ${gb(d.bytes)})`;
+  $("dlList").innerHTML = `<table><tbody>${items.map(i => `<tr><td class="name">${esc(i.name)}</td>
+    <td class="muted">${i.active ? "descargando" : i.paused ? "en pausa" : i.queued ? "en cola" : i.deferred_time ? "programada " + dt(i.deferred_time) : "en espera"}</td>
+    <td class="num">${gb(i.bytes)}</td></tr>`).join("")}</tbody></table>`;
+}
+$("dlAll").onclick = async () => {
+  await act(() => api("/api/steam/downloads/all", {}), "Iniciando descargas en el Deck…");
+  setTimeout(loadDownloads, 6000);
+};
+loaders.games = async () => { loadDownloads(); if (!games) await loadGames(); else loadLibrary(); await loadSteam(); };
 
 // --- Detalle de un juego ---------------------------------------------------------
 let gd = null, gdTab = "info";

@@ -2,6 +2,7 @@ import { ButtonItem, Field, PanelSection, PanelSectionRow, ToggleField, staticCl
 import { callable, definePlugin, toaster } from "@decky/api";
 import { useEffect, useState } from "react";
 import { FaHeartbeat } from "react-icons/fa";
+import { downloadAll, pendingDownloads, startDownloads } from "./downloads";
 import { startLibraryReport } from "./library";
 import { startShortcutSync } from "./shortcuts";
 
@@ -13,6 +14,31 @@ const getAccess = callable<[], AccessInfo>("get_access");
 const setLanAccess = callable<[boolean], { ok: boolean; error?: string }>("set_lan_access");
 const restartDaemon = callable<[], { ok: boolean; error?: string }>("restart_daemon");
 const setMounted = callable<[string, boolean], { ok: boolean; error?: string }>("set_mounted");
+
+// Actualizaciones de Steam en espera, con «Descargar todo».
+function Downloads() {
+  const [n, setN] = useState(pendingDownloads().filter((i) => !i.active).length);
+  useEffect(() => {
+    const id = setInterval(() => setN(pendingDownloads().filter((i) => !i.active).length), 3000);
+    return () => clearInterval(id);
+  }, []);
+  if (!n) return null;
+  return (
+    <PanelSection title="Descargas">
+      <PanelSectionRow>
+        <ButtonItem
+          layout="below"
+          onClick={async () => {
+            const c = await downloadAll();
+            toaster.toast({ title: "DeckHub · Descargas", body: `${c} descargas en cola` });
+          }}
+        >
+          Descargar todo ({n})
+        </ButtonItem>
+      </PanelSectionRow>
+    </PanelSection>
+  );
+}
 
 // Dirección del panel web y token, para entrar desde el PC o el móvil.
 function Access() {
@@ -184,6 +210,8 @@ function Content() {
         </PanelSectionRow>
       </PanelSection>
 
+      <Downloads />
+
       <Drives disks={st.disks ?? []} />
 
       <PanelSection title="Almacenamiento y red">
@@ -220,6 +248,7 @@ function Content() {
 export default definePlugin(() => {
   const stopSync = startShortcutSync();
   const stopLibrary = startLibraryReport();
+  const stopDownloads = startDownloads();
   return {
     name: "DeckHub",
     titleView: <div className={staticClasses.Title}>DeckHub</div>,
@@ -228,6 +257,7 @@ export default definePlugin(() => {
     onDismount: () => {
       stopSync();
       stopLibrary();
+      stopDownloads();
     },
   };
 });

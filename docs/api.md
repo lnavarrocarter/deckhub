@@ -72,6 +72,8 @@ El token está en `~/.config/deckhub/token` del Deck. Las rutas protegidas respo
 | GET | `/api/library` | juegos de Steam, ROMs y accesos directos + versiones de Proton |
 | GET | `/api/library/detail` | `?key=steam:<appid>\|rom:<ruta>\|sc:<appid>` |
 | POST | `/api/library/action` | `{action: run\|launch_options\|shortcut_launch_options\|compat_tool\|hidden, appid, value?}` |
+| GET | `/api/steam/downloads` | cola de descargas de Steam (la envía el plugin) |
+| POST | `/api/steam/downloads/all` | pone en cola e inicia todas las pendientes |
 | GET | `/api/custom/art/image` | `?appid=&kind=`: imagen actual (para `<img>`) |
 
 ## Accesos directos y portadas

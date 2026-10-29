@@ -223,6 +223,20 @@ async def library_action(request):
     return _ok()
 
 
+async def downloads_get(request):
+    return _ok(library.downloads())
+
+
+async def downloads_report(request):
+    library.store_downloads((await _body(request)).get("items"))
+    return _ok()
+
+
+async def downloads_all(request):
+    library.download_all()
+    return _ok()
+
+
 async def store_get(request):
     return _ok(store.collect())
 
@@ -572,6 +586,9 @@ def setup(app):
     r.add_post("/api/shortcuts/art/refresh", art_refresh)
     r.add_get("/api/steam/playtime", playtime_get)
     r.add_post("/api/steam/playtime", playtime_report)
+    r.add_get("/api/steam/downloads", downloads_get)
+    r.add_post("/api/steam/downloads", downloads_report)
+    r.add_post("/api/steam/downloads/all", downloads_all)
     r.add_get("/api/store", store_get)
     r.add_post("/api/store/refresh", store_refresh)
     r.add_post("/api/store/import", store_import)

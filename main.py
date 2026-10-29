@@ -179,6 +179,13 @@ class Plugin:
         except Exception:
             return 0
 
+    async def report_downloads(self, items):
+        try:
+            await asyncio.to_thread(_request, "/api/steam/downloads", {"items": items})
+            return True
+        except Exception:
+            return False
+
     async def get_store_notifications(self):
         try:
             r = await asyncio.to_thread(_request, "/api/store/notifications")

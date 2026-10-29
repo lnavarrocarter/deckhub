@@ -1,5 +1,9 @@
 # Cambios
 
+## 0.9.0 (2026-10-29)
+
+- «Descargar todo»: pone en cola e inicia todas las actualizaciones pendientes de Steam. Disponible en la página Descargas de Steam, en el menú rápido y en la pestaña Juegos del panel.
+
 ## 0.8.1 (2026-10-29)
 
 - La lista de deseados se importa desde el cliente de Steam (con tu sesión) aunque el perfil no la muestre, y se sincroniza cada 30 minutos.
