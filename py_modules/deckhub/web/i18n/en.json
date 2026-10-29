@@ -733,5 +733,8 @@
  "el tamaño de swap debe estar entre 1 y 32 GB": "swap size must be between 1 and 32 GB",
  "Aplicar {} ajustes de memoria": "Apply {} memory settings",
  "Volver a los ajustes de memoria de fábrica": "Restore factory memory settings",
- "Cambiar el archivo de swap a {} GB": "Resize the swap file to {} GB"
+ "Cambiar el archivo de swap a {} GB": "Resize the swap file to {} GB",
+ "Carátulas de tus juegos, temas del modo juego, videos de arranque y fondos.": "Your games' artwork, Game Mode themes, boot videos and wallpapers.",
+ "Temas": "Themes",
+ "Fondos": "Wallpapers"
 }
