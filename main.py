@@ -72,7 +72,9 @@ def _ensure_daemon():
         with open(UNIT_FILE, "w") as f:
             f.write(UNIT)
         _systemctl("daemon-reload")
-        _systemctl("enable", UNIT_NAME)
+    # Siempre: al actualizar, Decky ejecuta _uninstall de la versión anterior (que lo
+    # deshabilita) y la unidad queda igual, así que no basta con habilitar si cambió.
+    _systemctl("enable", UNIT_NAME)
     if changed or _running_version() != _bundled_version():
         _systemctl("restart", UNIT_NAME)
         decky.logger.info("daemon DeckHub %s (re)iniciado desde %s", _bundled_version(), PKG_DIR)
