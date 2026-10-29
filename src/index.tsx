@@ -1,4 +1,4 @@
-import { Field, PanelSection, PanelSectionRow, ToggleField, staticClasses } from "@decky/ui";
+import { ButtonItem, Field, PanelSection, PanelSectionRow, ToggleField, staticClasses } from "@decky/ui";
 import { callable, definePlugin, toaster } from "@decky/api";
 import { useEffect, useState } from "react";
 import { FaHeartbeat } from "react-icons/fa";
@@ -7,8 +7,36 @@ import { startShortcutSync } from "./shortcuts";
 type Status = { ok: true; data: any } | { ok: false; error: string };
 
 const getStatus = callable<[], Status>("get_status");
-const getDashboardUrl = callable<[], string>("get_dashboard_url");
+const getAccess = callable<[], { url: string; token: string }>("get_access");
+const restartDaemon = callable<[], { ok: boolean; error?: string }>("restart_daemon");
 const setMounted = callable<[string, boolean], { ok: boolean; error?: string }>("set_mounted");
+
+// Dirección del panel web y token, para entrar desde el PC o el móvil.
+function Access() {
+  const [access, setAccess] = useState<{ url: string; token: string } | null>(null);
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    getAccess().then(setAccess);
+  }, []);
+  return (
+    <PanelSection title="Panel web">
+      <PanelSectionRow>
+        <Field label="Dirección" bottomSeparator="none">
+          {access?.url ?? "…"}
+        </Field>
+      </PanelSectionRow>
+      <PanelSectionRow>
+        {show ? (
+          <Field label="Token" description={access?.token || "aún no generado"} bottomSeparator="none" />
+        ) : (
+          <ButtonItem layout="below" onClick={() => setShow(true)}>
+            Mostrar token
+          </ButtonItem>
+        )}
+      </PanelSectionRow>
+    </PanelSection>
+  );
+}
 
 // Particiones de tarjetas SD/USB que se pueden montar (se omiten las de sistema, <1 GB).
 function Drives({ disks }: { disks: any[] }) {
@@ -52,7 +80,6 @@ const v = (x: unknown, unit = "") => (x == null ? "—" : `${x}${unit}`);
 
 function Content() {
   const [status, setStatus] = useState<Status | null>(null);
-  const [url, setUrl] = useState("");
 
   useEffect(() => {
     let alive = true;
@@ -61,7 +88,6 @@ function Content() {
       if (alive) setStatus(s);
     };
     tick();
-    getDashboardUrl().then((u) => alive && setUrl(u));
     const id = setInterval(tick, 2000);
     return () => {
       alive = false;
@@ -75,6 +101,17 @@ function Content() {
       <PanelSection title="DeckHub">
         <PanelSectionRow>
           <Field label="Daemon no disponible" description={status.error} />
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <ButtonItem
+            layout="below"
+            onClick={async () => {
+              const r = await restartDaemon();
+              toaster.toast({ title: "DeckHub", body: r.ok ? "Daemon reiniciado" : r.error ?? "Error" });
+            }}
+          >
+            Reiniciar daemon
+          </ButtonItem>
         </PanelSectionRow>
       </PanelSection>
     );
@@ -130,10 +167,9 @@ function Content() {
             {n.wifi ? `${n.wifi.ssid} · ${n.wifi.signal}%` : "desconectado"}
           </Field>
         </PanelSectionRow>
-        <PanelSectionRow>
-          <Field label="Panel web" description={url} bottomSeparator="none" />
-        </PanelSectionRow>
       </PanelSection>
+
+      <Access />
 
       <PanelSection title="Steam">
         <PanelSectionRow>

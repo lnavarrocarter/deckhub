@@ -1,7 +1,7 @@
 {
   "name": "deckhub",
-  "version": "0.2.0",
-  "description": "Supervisor del Steam Deck: estado del sistema en el menú de acceso rápido",
+  "version": "0.3.0",
+  "description": "Supervisor y centro retro para Steam Deck: panel web + plugin de Decky Loader",
   "type": "module",
   "scripts": {
     "build": "rollup -c",

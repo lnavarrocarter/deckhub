@@ -5,6 +5,7 @@ SteamClient.Apps.SetCustomArtworkForApp (Steam no las recarga desde disco en viv
 """
 import asyncio
 import logging
+import time
 from pathlib import Path
 from urllib.parse import quote
 
@@ -80,9 +81,28 @@ async def fetch(appid, title):
     return out
 
 
+def describe(e):
+    """Mensaje legible para errores de red (TimeoutError y similares llegan sin texto)."""
+    if isinstance(e, (asyncio.TimeoutError, TimeoutError)):
+        return ("tiempo de espera agotado al conectar con www.steamgriddb.com: la red del Deck "
+                "no llega a SteamGridDB (revisa IPv6, el router o el filtro DNS)")
+    if isinstance(e, aiohttp.ClientConnectorError):
+        return f"no se pudo conectar con www.steamgriddb.com ({e.os_error or e})"
+    return str(e) or type(e).__name__
+
+
+# Último fallo de red, visible en Ajustes. Con la red caída no se insiste juego por
+# juego: se espera cada vez más (1 → 10 min) antes de volver a probar.
+NET = {"error": None, "since": None, "retry_at": 0.0, "backoff": 0}
+
+
+def net_status():
+    return {"error": NET["error"], "since": NET["since"]}
+
+
 async def process_queue():
     """Busca portadas de los accesos directos creados que aún no las tienen."""
-    if not config.load().get("steamgriddb_key"):
+    if not config.load().get("steamgriddb_key") or time.time() < NET["retry_at"]:
         return
     for key, s in shortcuts.items():
         art = s.get("art") or {}
@@ -93,8 +113,19 @@ async def process_queue():
             shortcuts.set_art(key, {"status": "ready", "images": images})
         except ArtError as e:
             shortcuts.set_art(key, {"status": "error", "error": str(e)})
-        except Exception as e:  # red, SteamGridDB caído: se reintenta en el próximo ciclo
-            log.warning("portada de %s falló: %s", s["title"], e)
+        except Exception as e:  # red o SteamGridDB caído: se reintenta más tarde
+            NET["backoff"] = min(600, max(60, NET["backoff"] * 2))
+            NET["retry_at"] = time.time() + NET["backoff"]
+            if NET["error"] is None:
+                NET["since"] = time.time()
+            NET["error"] = describe(e)
+            log.warning("portadas en pausa %d s: %s", NET["backoff"], NET["error"])
+            return
+        NET.update(error=None, since=None, backoff=0)
+
+
+def retry_now():
+    NET["retry_at"] = 0.0
 
 
 async def loop():

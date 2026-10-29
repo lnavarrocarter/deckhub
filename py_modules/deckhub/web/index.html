@@ -758,7 +758,9 @@ async function loadSettings() {
   const s = await api("/api/settings");
   $("autoArt").checked = s.auto_artwork;
   $("sgdbKey").placeholder = s.steamgriddb_key_set ? `Clave guardada (${s.steamgriddb_key_hint}) · escribe otra para cambiarla` : "Pega aquí tu clave de SteamGridDB";
-  $("sgdbStatus").textContent = s.steamgriddb_key_set ? "✓ Clave configurada" : "Sin clave: los juegos aparecerán sin portada.";
+  $("sgdbStatus").textContent = !s.steamgriddb_key_set ? "Sin clave: los juegos aparecerán sin portada."
+    : s.artwork_net?.error ? `⚠ Clave configurada, pero las portadas están en pausa: ${s.artwork_net.error}.`
+    : "✓ Clave configurada";
 }
 $("sgdbForm").onsubmit = async e => {
   e.preventDefault();

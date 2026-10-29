@@ -1,8 +1,11 @@
-"""Backend del plugin: puente entre la interfaz de Decky y el daemon DeckHub local."""
+"""Backend del plugin: instala el daemon DeckHub como servicio de usuario y hace de
+puente entre la interfaz de Decky y ese daemon."""
 import asyncio
 import base64
 import json
 import os
+import re
+import subprocess
 import urllib.error
 import urllib.request
 
@@ -10,6 +13,71 @@ import decky
 
 DAEMON = "http://127.0.0.1:8765"
 TOKEN_FILE = os.path.join(decky.DECKY_USER_HOME, ".config/deckhub/token")
+# El daemon viaja dentro del plugin, en py_modules/deckhub.
+PKG_DIR = os.path.join(decky.DECKY_PLUGIN_DIR, "py_modules")
+UNIT_NAME = "deckhub.service"
+UNIT_FILE = os.path.join(decky.DECKY_USER_HOME, ".config/systemd/user", UNIT_NAME)
+UNIT = f"""[Unit]
+Description=DeckHub - supervisor del Steam Deck (instalado por el plugin de Decky)
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory={PKG_DIR}
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/usr/bin/python3 -m deckhub --port 8765
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target
+"""
+
+
+def _systemctl(*args):
+    # Decky no pasa la sesión del usuario al backend: se indica a mano para
+    # hablar con su systemd --user (el mismo contexto que udisks y flatpak).
+    uid = os.getuid()
+    env = {**os.environ, "XDG_RUNTIME_DIR": f"/run/user/{uid}",
+           "DBUS_SESSION_BUS_ADDRESS": f"unix:path=/run/user/{uid}/bus"}
+    r = subprocess.run(["systemctl", "--user", *args], env=env, capture_output=True, text=True, timeout=30)
+    if r.returncode != 0 and args[0] not in ("is-active",):
+        decky.logger.warning("systemctl %s: %s", " ".join(args), r.stderr.strip())
+    return r
+
+
+def _bundled_version():
+    with open(os.path.join(PKG_DIR, "deckhub/__init__.py")) as f:
+        return re.search(r'VERSION = "([^"]+)"', f.read()).group(1)
+
+
+def _running_version():
+    try:
+        with urllib.request.urlopen(DAEMON + "/api", timeout=10) as r:
+            return json.load(r).get("version")
+    except Exception:
+        return None
+
+
+def _ensure_daemon():
+    """Escribe la unidad si cambió y (re)arranca el daemon si no es la versión incluida."""
+    changed = True
+    try:
+        with open(UNIT_FILE) as f:
+            changed = f.read() != UNIT
+    except OSError:
+        pass
+    if changed:
+        os.makedirs(os.path.dirname(UNIT_FILE), exist_ok=True)
+        with open(UNIT_FILE, "w") as f:
+            f.write(UNIT)
+        _systemctl("daemon-reload")
+        _systemctl("enable", UNIT_NAME)
+    if changed or _running_version() != _bundled_version():
+        _systemctl("restart", UNIT_NAME)
+        decky.logger.info("daemon DeckHub %s (re)iniciado desde %s", _bundled_version(), PKG_DIR)
+    else:
+        _systemctl("start", UNIT_NAME)
 
 
 def _token():
@@ -103,8 +171,31 @@ class Plugin:
         except Exception:
             return False
 
+    async def get_access(self):
+        """URL del panel y token, para entrar desde el PC o el móvil sin SSH."""
+        return {"url": await self.get_dashboard_url(), "token": _token()}
+
+    async def restart_daemon(self):
+        r = await asyncio.to_thread(_systemctl, "restart", UNIT_NAME)
+        return {"ok": r.returncode == 0, "error": r.stderr.strip() or None}
+
     async def _main(self):
+        try:
+            await asyncio.to_thread(_ensure_daemon)
+        except Exception:
+            decky.logger.exception("no pude preparar el daemon")
         decky.logger.info("DeckHub plugin cargado")
 
     async def _unload(self):
+        # El daemon sigue activo: el panel web funciona aunque Decky se reinicie.
         decky.logger.info("DeckHub plugin descargado")
+
+    async def _uninstall(self):
+        # Se quita el servicio; configuración, portadas y copias de partidas se conservan.
+        await asyncio.to_thread(_systemctl, "disable", "--now", UNIT_NAME)
+        try:
+            os.remove(UNIT_FILE)
+        except OSError:
+            pass
+        await asyncio.to_thread(_systemctl, "daemon-reload")
+        decky.logger.info("DeckHub desinstalado (datos en ~/.config/deckhub y ~/DeckHub conservados)")

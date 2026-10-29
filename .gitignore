@@ -1,7 +1,7 @@
 # Dependencias y compilados
 node_modules/
-plugin/dist/
-plugin/out/
+dist/
+out/
 __pycache__/
 *.pyc
 

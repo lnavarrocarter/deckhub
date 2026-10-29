@@ -210,6 +210,7 @@ async def art_ack(request):
 
 async def art_refresh(request):
     b = await _body(request)
+    artwork.retry_now()
     return _ok(shortcuts.request_art(b.get("paths")))
 
 
@@ -220,7 +221,7 @@ async def settings_get(request):
     k = cfg.get("steamgriddb_key", "")
     return _ok({"steamgriddb_key_set": bool(k), "steamgriddb_key_hint": f"…{k[-4:]}" if k else "",
                 "auto_artwork": cfg["auto_artwork"], "backup_daily": cfg["backup_daily"],
-                "backup_keep": cfg["backup_keep"]})
+                "backup_keep": cfg["backup_keep"], "artwork_net": artwork.net_status()})
 
 
 async def settings_set(request):
@@ -238,8 +239,8 @@ async def settings_set(request):
                 config.save(cfg)
                 if isinstance(e, artwork.ArtError):
                     raise ValueError(str(e))
-                raise ValueError(f"No pude conectar con SteamGridDB para validar la clave "
-                                 f"({type(e).__name__}). Revisa la conexión del Deck.")
+                raise ValueError(f"No pude validar la clave: {artwork.describe(e)}.")
+            artwork.retry_now()
     for k in ("auto_artwork", "backup_daily"):
         if k in b:
             cfg[k] = bool(b[k])

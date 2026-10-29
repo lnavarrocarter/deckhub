@@ -19,7 +19,7 @@ DeckHub tiene tres piezas que se comunican por HTTP local.
       PC / móvil (navegador)
 ```
 
-## Daemon (`daemon/deckhub/`)
+## Daemon (`py_modules/deckhub/`)
 
 | Archivo | Papel |
 |---|---|
@@ -50,16 +50,20 @@ DeckHub tiene tres piezas que se comunican por HTTP local.
 
 Cada módulo de estado expone `async def collect() -> dict` y se registra en `modules/__init__.py`.
 
-## Plugin (`plugin/`)
+## Plugin (raíz del repositorio)
 
-- `main.py`: backend de Decky. Lee el token del usuario y llama al daemon en `127.0.0.1:8765`.
-- `src/index.tsx`: panel del menú rápido (sistema, unidades, red, Steam).
+- `main.py`: backend de Decky (corre como `deck`).
+  - Al cargar (`_main`) escribe `~/.config/systemd/user/deckhub.service` apuntando a `<carpeta del plugin>/py_modules` y arranca el daemon; si la versión en marcha no coincide con la incluida, lo reinicia.
+  - Al desinstalar (`_uninstall`) desactiva y borra el servicio; los datos se conservan.
+  - Al descargarse (`_unload`) deja el daemon en marcha, para que el panel web siga funcionando si Decky se reinicia.
+  - Hace de puente: lee el token y llama al daemon en `127.0.0.1:8765`.
+- `src/index.tsx`: panel del menú rápido (sistema, unidades, red, Steam, dirección y token del panel web).
 - `src/shortcuts.ts`: cada 5 s pide al daemon la cola pendiente y la aplica con la API interna de Steam (`SteamClient.Apps.AddShortcut`, `SetCustomArtworkForApp`, colecciones). Así el daemon nunca edita `shortcuts.vdf` con Steam abierto.
 
 ## Principios
 
 - **Nada se borra definitivamente**: archivos, firmware, llaves y trucos van a la papelera.
-- **Sin root**: todo corre como `deck`. Lo único con `sudo` es opcional (reiniciar Decky).
+- **Sin root**: todo corre como `deck`. Lo único con `sudo` es para desarrollo (preparar la carpeta y reiniciar Decky).
 - **Sin contenido con derechos de autor**: DeckHub no descarga juegos, BIOS, firmware ni llaves.
 - **Un módulo roto no tumba el resto**: los errores se devuelven por módulo.
 
@@ -67,7 +71,8 @@ Cada módulo de estado expone `async def collect() -> dict` y se registra en `mo
 
 | Ruta | Contenido |
 |---|---|
-| `~/deckhub/` | Código del daemon. |
+| `~/homebrew/plugins/DeckHub/` | Plugin y daemon (`py_modules/deckhub`). |
+| `~/.config/systemd/user/deckhub.service` | Servicio, escrito por el plugin. |
 | `~/.config/deckhub/` | `config.json`, `token`, `shortcuts.json`. |
 | `~/.cache/deckhub/` | Portadas, caché de IDs de PS2, subidas temporales. |
 | `~/DeckHub/backups/` | Copias de partidas. |

@@ -1,5 +1,13 @@
 # Cambios
 
+## 0.3.0 (2026-10-29)
+
+- El repositorio pasa a ser un plugin de Decky: el daemon viaja en `py_modules/` y el plugin lo instala, actualiza y desinstala como servicio de usuario.
+- Menú rápido: dirección y token del panel web, y botón «Reiniciar daemon».
+- Zip instalable (`scripts/build-zip.py`) y GitHub Actions que lo publica en cada etiqueta.
+- Portadas: mensajes de error claros, espera progresiva cuando no hay conexión y aviso en Ajustes.
+- Se quita el modo `debug` del plugin.
+
 ## 0.2.0 (2026-10-28)
 
 - Módulo retro: detección de ROMs (PS2, Switch y más) y agrupación de actualizaciones/DLC de Switch.

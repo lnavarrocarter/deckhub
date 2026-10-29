@@ -1,0 +1,16 @@
+{
+  "name": "DeckHub",
+  "author": "lnavarrocarter",
+  "flags": [],
+  "api_version": 1,
+  "publish": {
+    "tags": [
+      "monitor",
+      "system",
+      "emulation",
+      "storage"
+    ],
+    "description": "Supervisor y centro retro: sistema, microSD, archivos, emuladores, accesos directos con portadas, partidas y trucos, con panel web.",
+    "image": ""
+  }
+}

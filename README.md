@@ -4,7 +4,7 @@ Supervisor y centro retro para el **Steam Deck**: un servicio en el propio Deck,
 
 DeckHub cubre lo que Decky no toca: unidades y microSD, archivos, paquetes Flatpak, emuladores, accesos directos de Steam con portadas, partidas guardadas y trucos.
 
-> **Estado:** versión 0.2 (en desarrollo). Probado en SteamOS 3.9 (Steam Deck LCD) con Decky Loader 3.3. Aún no está en la tienda de Decky; ver [hoja de ruta](docs/roadmap.md).
+> **Estado:** versión 0.3 (en desarrollo). Probado en SteamOS 3.9 (Steam Deck LCD) con Decky Loader 3.3. Se instala como un plugin de Decky desde un zip; aún no está en la tienda de Decky ([hoja de ruta](docs/roadmap.md)).
 
 *English summary below.*
 
@@ -33,22 +33,23 @@ PC / móvil ──HTTP──▶ daemon (Python, aiohttp, :8765) ◀──── 
                          └─ SteamGridDB, copias de seguridad
 ```
 
-- [`daemon/`](daemon): servicio `systemd --user` en Python, sin dependencias fuera de las que trae SteamOS + `aiohttp`. Sirve la API y el panel web.
-- [`plugin/`](plugin): plugin de Decky (TypeScript/React + backend Python).
+El repositorio es un plugin de Decky: al cargarse, el plugin instala y arranca el daemon como servicio `systemd --user`.
+
+- [`src/`](src): interfaz del menú rápido (TypeScript/React).
+- [`main.py`](main.py): backend del plugin; instala el daemon y hace de puente.
+- [`py_modules/deckhub/`](py_modules/deckhub): el daemon (Python + `aiohttp`, ambos incluidos en SteamOS) y el panel web.
+- [`scripts/`](scripts): despliegue de desarrollo y empaquetado del zip.
 - [`docs/`](docs): documentación.
 
 Detalles en [docs/arquitectura.md](docs/arquitectura.md).
 
-## Instalación (desarrollo)
+## Instalación
 
-De momento se instala desde el código con SSH. Guía completa en [docs/instalacion.md](docs/instalacion.md).
+1. Descarga `DeckHub-x.y.z.zip` de [Releases](../../releases).
+2. En el Deck: Decky → Ajustes → General → activa **Modo desarrollador**; luego Decky → Ajustes → Desarrollador → **Instalar plugin desde ZIP**.
+3. Abre DeckHub en el menú rápido: la sección **Panel web** muestra la dirección y el token para entrar desde el PC o el móvil.
 
-```bash
-cd daemon && ./deploy.sh steamdeck      # servicio + panel web
-cd plugin && pnpm install && ./deploy.sh steamdeck   # plugin de Decky
-```
-
-Después abre `http://<ip-del-deck>:8765` en el navegador.
+Guía completa (y despliegue para desarrollo) en [docs/instalacion.md](docs/instalacion.md).
 
 ## Documentación
 
@@ -77,4 +78,4 @@ DeckHub no está afiliado a Valve, Nintendo, Sony ni a los proyectos de los emul
 
 It handles what Decky doesn't: microSD/USB mounting and automount, a web file manager, Flatpak packages, emulator install/config (PCSX2, Eden, RetroArch…), one-click Steam shortcuts with automatic SteamGridDB artwork, Switch update/DLC grouping, save backups and cheats.
 
-It does **not** ship or download games, BIOS, firmware or keys; you supply your own dumps. The UI is currently in Spanish. Not yet on the Decky store; see the [roadmap](docs/roadmap.md).
+Install it as a Decky plugin from the zip in Releases (Decky → Developer → Install plugin from ZIP); the plugin sets up the background service by itself. It does **not** ship or download games, BIOS, firmware or keys; you supply your own dumps. The UI is currently in Spanish. Not yet on the Decky store; see the [roadmap](docs/roadmap.md).
