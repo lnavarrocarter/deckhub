@@ -65,7 +65,9 @@ El token está en `~/.config/deckhub/token` del Deck. Las rutas protegidas respo
 
 | Método | Ruta | Cuerpo |
 |---|---|---|
-| GET/POST | `/api/settings` | `{steamgriddb_key?, auto_artwork?, backup_daily?, backup_keep?}` |
+| GET/POST | `/api/settings` | `{steamgriddb_key?, auto_artwork?, backup_daily?, backup_keep?, lan_access?}`; cambiar `lan_access` reinicia el daemon (`restarting: true`) |
+| GET | `/api/steam/playtime` | tiempo de juego de la biblioteca |
+| POST | `/api/steam/playtime` | `{apps: []}` (lo envía el plugin) |
 | GET | `/api/saves` | |
 | POST | `/api/saves/backup` | `{emulator, only?}` |
 | POST | `/api/saves/restore` | `{name, emulator}` |

@@ -90,6 +90,7 @@
     <button data-tab="games">Juegos</button>
     <button data-tab="emulators">Emuladores</button>
     <button data-tab="saves">Partidas</button>
+    <button data-tab="playtime">Tiempo de juego</button>
     <button data-tab="cheats">Trucos</button>
     <button data-tab="packages">Paquetes</button>
     <button data-tab="jobs">Tareas<span class="badge" id="jobsBadge" hidden></span></button>
@@ -187,6 +188,11 @@
 
   <section class="tab" id="tab-settings">
     <div class="card">
+      <h2>Acceso al panel</h2>
+      <div class="toolbar"><label><input type="checkbox" id="lanAccess"> Permitir el acceso desde la red (puerto 8765)</label></div>
+      <p class="sub">Si lo desactivas, el panel solo funciona en el propio Deck y el plugin de Decky sigue operando. Para volver a abrirlo usa el interruptor «Acceso desde la red» del plugin.</p>
+    </div>
+    <div class="card">
       <h2>Portadas · SteamGridDB</h2>
       <p class="sub" style="margin-top:0">Crea una clave gratis en steamgriddb.com → Preferencias → API. Se guarda solo en el Deck.</p>
       <form class="toolbar" id="sgdbForm"><input type="password" id="sgdbKey" class="grow" autocomplete="off"><button class="b primary">Guardar clave</button></form>
@@ -201,6 +207,18 @@
       <h2>Buscar en Flathub</h2>
       <form class="toolbar" id="pkgSearchForm"><input type="search" id="pkgQuery" placeholder="ej. retroarch, dolphin, ppsspp" class="grow"><button class="b primary">Buscar</button></form>
       <div id="pkgResults"></div>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-playtime">
+    <div class="card">
+      <h2>Tiempo de juego</h2>
+      <div class="toolbar">
+        <select id="ptFilter"><option value="all">Todos</option><option value="steam">Steam</option><option value="shortcut">Emuladores y otros</option><option value="installed">Instalados</option></select>
+        <input id="ptSearch" class="grow" placeholder="Buscar juego">
+      </div>
+      <p class="sub" id="ptSummary"></p>
+      <div class="scroll" style="max-height:none"><table><thead><tr><th>Juego</th><th>Tipo</th><th class="num">Total</th><th class="num">Últimas 2 semanas</th><th class="num">Última vez</th></tr></thead><tbody id="ptList"></tbody></table></div>
     </div>
   </section>
 
@@ -705,6 +723,33 @@ $("bkDaily").onchange = () => act(() => api("/api/settings", {backup_daily: $("b
 $("bkKeep").onchange = () => act(() => api("/api/settings", {backup_keep: +$("bkKeep").value || 10}), "Guardado");
 loaders.saves = loadSaves;
 
+// --- Tiempo de juego ------------------------------------------------------------
+let playtime = null;
+const hm = m => m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`;
+async function loadPlaytime() {
+  playtime = await api("/api/steam/playtime");
+  renderPlaytime();
+}
+function renderPlaytime() {
+  if (!playtime) return;
+  if (!playtime.updated) {
+    $("ptSummary").textContent = "Aún sin datos: el plugin de Decky los envía unos segundos después de abrir Steam.";
+    $("ptList").innerHTML = ""; return;
+  }
+  const f = $("ptFilter").value, q = $("ptSearch").value.trim().toLowerCase();
+  const list = playtime.apps.filter(a =>
+    (f === "all" || (f === "steam" && !a.shortcut) || (f === "shortcut" && a.shortcut) || (f === "installed" && a.installed))
+    && (!q || a.name.toLowerCase().includes(q)));
+  const total = list.reduce((n, a) => n + a.minutes, 0);
+  $("ptSummary").textContent = `${list.length} juegos · ${hm(total)} en total · actualizado ${new Date(playtime.updated * 1000).toLocaleTimeString()}`;
+  $("ptList").innerHTML = list.map(a => `<tr><td>${esc(a.name)}</td><td class="muted">${a.shortcut ? "Acceso directo" : "Steam"}</td>
+    <td class="num">${a.minutes ? hm(a.minutes) : "—"}</td><td class="num muted">${a.minutes_2w ? hm(a.minutes_2w) : "—"}</td>
+    <td class="num muted">${a.last_played ? date(a.last_played) : "nunca"}</td></tr>`).join("");
+}
+$("ptFilter").onchange = renderPlaytime;
+$("ptSearch").oninput = renderPlaytime;
+loaders.playtime = loadPlaytime;
+
 // --- Trucos ---------------------------------------------------------------------
 let cheatData = null;
 async function loadCheats() {
@@ -757,6 +802,7 @@ loaders.cheats = loadCheats;
 async function loadSettings() {
   const s = await api("/api/settings");
   $("autoArt").checked = s.auto_artwork;
+  $("lanAccess").checked = s.lan_access;
   $("sgdbKey").placeholder = s.steamgriddb_key_set ? `Clave guardada (${s.steamgriddb_key_hint}) · escribe otra para cambiarla` : "Pega aquí tu clave de SteamGridDB";
   $("sgdbStatus").textContent = !s.steamgriddb_key_set ? "Sin clave: los juegos aparecerán sin portada."
     : s.artwork_net?.error ? `⚠ Clave configurada, pero las portadas están en pausa: ${s.artwork_net.error}.`
@@ -766,6 +812,11 @@ $("sgdbForm").onsubmit = async e => {
   e.preventDefault();
   const key = $("sgdbKey").value.trim(); if (!key) return;
   try { await act(() => api("/api/settings", {steamgriddb_key: key}), "Clave válida y guardada"); $("sgdbKey").value = ""; loadSettings(); } catch {}
+};
+$("lanAccess").onchange = async () => {
+  const on = $("lanAccess").checked;
+  if (!on && !confirm("¿Cerrar el panel a la red?\n\nEsta página dejará de responder. Para volver a abrirlo usa el interruptor «Acceso desde la red» en el plugin de Decky.")) { $("lanAccess").checked = true; return; }
+  try { await act(() => api("/api/settings", {lan_access: on}), on ? "Abierto a la red" : "Cerrado a la red · el daemon se reinicia"); } catch { $("lanAccess").checked = !on; }
 };
 $("autoArt").onchange = () => act(() => api("/api/settings", {auto_artwork: $("autoArt").checked}), "Guardado");
 $("artAll").onclick = async () => {

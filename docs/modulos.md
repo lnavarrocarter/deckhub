@@ -58,10 +58,21 @@ Comprobaciones: el zip debe tener al menos 20 `.nca`, las llaves deben contener 
 - **Restaurar**: antes de restaurar se hace una copia de lo actual.
 - **Migrar de yuzu a Eden**: copia partidas y perfil.
 
+## Tiempo de juego
+
+Horas totales, últimas 2 semanas y última vez jugado de toda tu biblioteca de Steam, con filtros (Steam, accesos directos, instalados) y búsqueda. El plugin de Decky envía los datos cada 5 minutos.
+
+Los accesos directos de emuladores aparecen sin horas: Steam no registra el tiempo de los juegos que no son de Steam.
+
 ## Trucos
 
 - **PS2**: identifica cada ISO (serial + CRC), edita su `.pnach` y activa o desactiva los trucos (PCSX2 debe estar cerrado).
 - **Switch (Eden)**: pega trucos por juego con nombre y Build ID; activar/desactivar los mueve entre la carpeta de Eden y una de reserva.
+
+## Ajustes
+
+- **Acceso al panel**: permitir o no el acceso desde la red (puerto 8765). Si se cierra, el panel solo responde en el propio Deck; se vuelve a abrir desde el plugin.
+- **Portadas**: clave de SteamGridDB y búsqueda automática.
 
 ## Tareas
 
@@ -70,6 +81,7 @@ Progreso de operaciones largas: copias, instalaciones, firmware, copias de segur
 ## Plugin de Decky (menú rápido)
 
 - Resumen del sistema.
+- **Panel web**: abrir/cerrar el acceso desde la red, dirección y token.
 - Interruptor para montar/desmontar unidades.
 - Aplica accesos directos, colecciones y portadas en Steam, y avisa con una notificación.
 - Botón para abrir el panel web.

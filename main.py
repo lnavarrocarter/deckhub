@@ -171,9 +171,29 @@ class Plugin:
         except Exception:
             return False
 
+    async def report_library(self, apps):
+        try:
+            await asyncio.to_thread(_request, "/api/steam/playtime", {"apps": apps})
+            return True
+        except Exception:
+            return False
+
     async def get_access(self):
         """URL del panel y token, para entrar desde el PC o el móvil sin SSH."""
-        return {"url": await self.get_dashboard_url(), "token": _token()}
+        try:
+            r = await asyncio.to_thread(_request, "/api/settings")
+            lan = r.get("data", {}).get("lan_access", True)
+        except Exception:
+            lan = None  # daemon caído
+        return {"url": await self.get_dashboard_url(), "token": _token(), "lan_access": lan}
+
+    async def set_lan_access(self, enabled):
+        """Abre o cierra el puerto 8765 a la red; el daemon se reinicia en unos segundos."""
+        try:
+            r = await asyncio.to_thread(_request, "/api/settings", {"lan_access": bool(enabled)})
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+        return {"ok": "error" not in r, "error": r.get("error")}
 
     async def restart_daemon(self):
         r = await asyncio.to_thread(_systemctl, "restart", UNIT_NAME)

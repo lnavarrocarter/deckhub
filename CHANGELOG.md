@@ -1,5 +1,10 @@
 # Cambios
 
+## 0.4.0 (2026-10-29)
+
+- Interruptor para abrir/cerrar el panel a la red (puerto 8765), en el plugin y en Ajustes. Cerrado, el daemon escucha solo en 127.0.0.1 y el plugin sigue funcionando.
+- Pestaña «Tiempo de juego»: horas de toda la biblioteca de Steam, enviadas por el plugin.
+
 ## 0.3.0 (2026-10-29)
 
 - El repositorio pasa a ser un plugin de Decky: el daemon viaja en `py_modules/` y el plugin lo instala, actualiza y desinstala como servicio de usuario.

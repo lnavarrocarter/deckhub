@@ -2,29 +2,59 @@ import { ButtonItem, Field, PanelSection, PanelSectionRow, ToggleField, staticCl
 import { callable, definePlugin, toaster } from "@decky/api";
 import { useEffect, useState } from "react";
 import { FaHeartbeat } from "react-icons/fa";
+import { startLibraryReport } from "./library";
 import { startShortcutSync } from "./shortcuts";
 
 type Status = { ok: true; data: any } | { ok: false; error: string };
 
 const getStatus = callable<[], Status>("get_status");
-const getAccess = callable<[], { url: string; token: string }>("get_access");
+type AccessInfo = { url: string; token: string; lan_access: boolean | null };
+const getAccess = callable<[], AccessInfo>("get_access");
+const setLanAccess = callable<[boolean], { ok: boolean; error?: string }>("set_lan_access");
 const restartDaemon = callable<[], { ok: boolean; error?: string }>("restart_daemon");
 const setMounted = callable<[string, boolean], { ok: boolean; error?: string }>("set_mounted");
 
 // Dirección del panel web y token, para entrar desde el PC o el móvil.
 function Access() {
-  const [access, setAccess] = useState<{ url: string; token: string } | null>(null);
+  const [access, setAccess] = useState<AccessInfo | null>(null);
   const [show, setShow] = useState(false);
+  const [busy, setBusy] = useState(false);
   useEffect(() => {
     getAccess().then(setAccess);
   }, []);
+
+  const toggle = async (on: boolean) => {
+    setBusy(true);
+    const r = await setLanAccess(on);
+    toaster.toast({
+      title: "DeckHub",
+      body: r.ok ? (on ? "Panel abierto a la red (puerto 8765)" : "Panel solo accesible desde el Deck") : r.error ?? "Error",
+    });
+    // El daemon se reinicia para escuchar en la nueva dirección.
+    setTimeout(async () => {
+      setAccess(await getAccess());
+      setBusy(false);
+    }, 5000);
+  };
+
   return (
     <PanelSection title="Panel web">
       <PanelSectionRow>
-        <Field label="Dirección" bottomSeparator="none">
-          {access?.url ?? "…"}
-        </Field>
+        <ToggleField
+          label="Acceso desde la red"
+          description="Puerto 8765 para el PC o el móvil"
+          checked={access?.lan_access ?? false}
+          disabled={busy || access?.lan_access == null}
+          onChange={toggle}
+        />
       </PanelSectionRow>
+      {access?.lan_access && (
+        <PanelSectionRow>
+          <Field label="Dirección" bottomSeparator="none">
+            {access.url}
+          </Field>
+        </PanelSectionRow>
+      )}
       <PanelSectionRow>
         {show ? (
           <Field label="Token" description={access?.token || "aún no generado"} bottomSeparator="none" />
@@ -189,11 +219,15 @@ function Content() {
 
 export default definePlugin(() => {
   const stopSync = startShortcutSync();
+  const stopLibrary = startLibraryReport();
   return {
     name: "DeckHub",
     titleView: <div className={staticClasses.Title}>DeckHub</div>,
     content: <Content />,
     icon: <FaHeartbeat />,
-    onDismount: stopSync,
+    onDismount: () => {
+      stopSync();
+      stopLibrary();
+    },
   };
 });

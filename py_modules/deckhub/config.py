@@ -14,6 +14,7 @@ DEFAULTS = {
     "auto_artwork": True,     # buscar portadas al agregar un juego a Steam
     "backup_daily": True,     # respaldo diario de partidas guardadas
     "backup_keep": 10,        # respaldos que se conservan por emulador
+    "lan_access": True,       # panel accesible desde la red (si no, solo 127.0.0.1)
 }
 
 

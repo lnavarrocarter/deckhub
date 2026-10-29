@@ -26,6 +26,34 @@ La tienda ([decky-plugin-database](https://github.com/SteamDeckHomebrew/decky-pl
 - [ ] Interfaz en inglés (i18n español/inglés).
 - [ ] Guía de instalación manual con el zip de Releases para quien no quiera esperar a la tienda.
 
+## Control total del Deck desde el hub
+
+Objetivo: que DeckHub abarque la mayor parte de la configuración del Deck, desde el panel web y desde el plugin.
+
+### Hecho
+
+- [x] Abrir/cerrar el panel a la red (puerto 8765) desde el plugin y desde Ajustes.
+- [x] Tiempo de juego de toda la biblioteca (total, últimas 2 semanas, última vez).
+
+### Fase A · Personalización
+
+- [ ] **Videos de arranque**: subir `.webm` a `~/.steam/root/config/uioverrides/movies/` y elegirlos (Steam los lista en Ajustes → Personalización).
+- [ ] **Portadas de toda la biblioteca**: elegir entre varias opciones de SteamGridDB para cualquier juego (no solo accesos directos) con vista previa; restaurar la original.
+- [ ] **Temas (skins) del modo juego**: integración con CSS Loader / DeckThemes: explorar, instalar, activar y desactivar temas desde el panel.
+- [ ] **Fondos de pantalla**: escritorio KDE (`plasma-apply-wallpaperimage`) y fondo del modo juego mediante tema.
+
+### Fase B · Sistema y rendimiento en el plugin
+
+- [ ] Perfiles de rendimiento (TDP, GPU, FPS) por juego desde el plugin, si la API de Steam lo permite sin root.
+- [ ] Gestión de unidades ampliada en el plugin: expulsar, espacio libre, automontaje.
+- [ ] Formatear microSD/USB (exFAT/ext4) con doble confirmación.
+- [ ] **Particionar discos**: alto riesgo de pérdida de datos; solo discos externos, nunca el interno, con vista previa y confirmación escrita.
+
+### Fase C · Biblioteca
+
+- [ ] Ocultar/mostrar juegos y gestionar colecciones desde el panel.
+- [ ] Tiempo de juego de los accesos directos de emuladores (Steam no lo registra; medirlo con el daemon mientras el emulador está abierto).
+
 ## Mejoras pendientes
 
 - [ ] Acelerar la pestaña Emuladores (hoy tarda ~10 s revisando permisos Flatpak uno a uno).

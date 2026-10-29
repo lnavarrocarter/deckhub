@@ -57,10 +57,12 @@ async def _start_automount(app):
 
 def main():
     ap = argparse.ArgumentParser(prog="deckhub")
-    ap.add_argument("--host", default="0.0.0.0")
+    ap.add_argument("--host", help="por defecto según el ajuste lan_access")
     ap.add_argument("--port", type=int, default=8765)
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    # Sin acceso por red el plugin sigue funcionando: habla con el daemon por 127.0.0.1.
+    args.host = args.host or ("0.0.0.0" if config.load()["lan_access"] else "127.0.0.1")
 
     config.token()  # se genera en el primer arranque
     app = web.Application(middlewares=[auth.middleware, routes.errors], client_max_size=64 * 1024**2)

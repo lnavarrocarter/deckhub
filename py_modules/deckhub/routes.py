@@ -1,4 +1,6 @@
 """Rutas protegidas por token: unidades, archivos, espacio, paquetes, juegos y tareas."""
+import asyncio
+import os
 from pathlib import Path
 from urllib.parse import quote
 
@@ -6,7 +8,7 @@ from aiohttp import web
 
 from . import fileops, jobs
 from . import config
-from .modules import artwork, cheats, emulators, packages, roms, saves, shortcuts, storage
+from .modules import artwork, cheats, emulators, packages, playtime, roms, saves, shortcuts, storage
 
 
 def _ok(data=None, **extra):
@@ -198,6 +200,14 @@ async def eden_keys(request):
     return _ok(sorted(files))
 
 
+async def playtime_get(request):
+    return _ok(playtime.load())
+
+
+async def playtime_report(request):
+    return _ok(playtime.store((await _body(request)).get("apps")))
+
+
 async def art_pending(request):
     return _ok(shortcuts.pending_art())
 
@@ -221,7 +231,8 @@ async def settings_get(request):
     k = cfg.get("steamgriddb_key", "")
     return _ok({"steamgriddb_key_set": bool(k), "steamgriddb_key_hint": f"…{k[-4:]}" if k else "",
                 "auto_artwork": cfg["auto_artwork"], "backup_daily": cfg["backup_daily"],
-                "backup_keep": cfg["backup_keep"], "artwork_net": artwork.net_status()})
+                "backup_keep": cfg["backup_keep"], "artwork_net": artwork.net_status(),
+                "lan_access": cfg["lan_access"]})
 
 
 async def settings_set(request):
@@ -246,8 +257,15 @@ async def settings_set(request):
             cfg[k] = bool(b[k])
     if "backup_keep" in b:
         cfg["backup_keep"] = max(1, min(100, int(b["backup_keep"])))
+    rebind = "lan_access" in b and bool(b["lan_access"]) != cfg["lan_access"]
+    if rebind:
+        cfg["lan_access"] = bool(b["lan_access"])
     config.save(cfg)
-    return _ok()
+    if rebind:
+        # Cambiar la dirección de escucha exige reiniciar: se sale con error y
+        # systemd (Restart=on-failure) vuelve a levantarlo en ~3 s con el nuevo ajuste.
+        asyncio.get_running_loop().call_later(0.5, os._exit, 75)
+    return _ok(restarting=rebind)
 
 
 # --- Partidas guardadas -------------------------------------------------------
@@ -348,6 +366,8 @@ def setup(app):
     r.add_get("/api/shortcuts/art/pending", art_pending)
     r.add_post("/api/shortcuts/art/ack", art_ack)
     r.add_post("/api/shortcuts/art/refresh", art_refresh)
+    r.add_get("/api/steam/playtime", playtime_get)
+    r.add_post("/api/steam/playtime", playtime_report)
     r.add_get("/api/settings", settings_get)
     r.add_post("/api/settings", settings_set)
     r.add_get("/api/saves", saves_list)
