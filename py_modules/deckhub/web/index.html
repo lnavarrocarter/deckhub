@@ -1146,7 +1146,15 @@ $("stList").onclick = async e => {
 $("stOnlySale").onchange = renderStore;
 $("stImport").onclick = async () => {
   $("stImport").disabled = true;
-  try { const r = await act(() => api("/api/store/import", {})); toast(`Lista de deseados: ${r.total} juegos (${r.new} nuevos)`); await loadStore(); } catch {}
+  try {
+    let r = await act(() => api("/api/store/import", {}));
+    if (r.pending) {
+      toast("Leyendo tu lista de deseados desde Steam (plugin)…");
+      for (let i = 0; i < 12 && r.pending; i++) { await new Promise(res => setTimeout(res, 3000)); r = await api("/api/store/import", {}); }
+    }
+    toast(r.pending ? "No llegaron los datos desde Steam: ¿está abierto Steam en el Deck?" : `Lista de deseados: ${r.total} juegos (${r.new} nuevos) · se sincroniza sola cada 30 minutos`);
+    await loadStore();
+  } catch {}
   $("stImport").disabled = false;
 };
 $("stRefresh").onclick = async () => {

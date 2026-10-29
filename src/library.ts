@@ -44,12 +44,36 @@ async function report() {
   await reportLibrary(list, tools);
 }
 
+const reportStoreUserdata = callable<[any], number>("report_store_userdata");
+
+// Datos de la tienda con la sesión de Steam del cliente (no dependen de la privacidad
+// del perfil): lista de deseados, ignorados, seguidos y etiquetas recomendadas.
+export async function syncStoreUserdata() {
+  const r = await fetch("https://store.steampowered.com/dynamicstore/userdata/", { credentials: "include" });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const j = await r.json();
+  return reportStoreUserdata({
+    wishlist: j.rgWishlist ?? [],
+    ignored: Object.keys(j.rgIgnoredApps ?? {}),
+    followed: j.rgFollowedApps ?? [],
+    recommended_tags: j.rgRecommendedTags ?? [],
+    recommended_apps: j.rgRecommendedApps ?? [],
+    owned: j.rgOwnedApps ?? [],
+  });
+}
+
 export function startLibraryReport(): () => void {
   const run = () => report().catch((e) => console.error("DeckHub: tiempo de juego", e));
-  const first = setTimeout(run, 10000);
+  const sync = () => syncStoreUserdata().catch((e) => console.error("DeckHub: datos de la tienda", e));
+  const first = setTimeout(() => {
+    run();
+    sync();
+  }, 10000);
   const id = setInterval(run, 2 * 60 * 1000);
+  const syncId = setInterval(sync, 30 * 60 * 1000);
   return () => {
     clearTimeout(first);
     clearInterval(id);
+    clearInterval(syncId);
   };
 }

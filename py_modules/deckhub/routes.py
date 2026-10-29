@@ -235,6 +235,10 @@ async def store_import(request):
     return _ok(await store.import_wishlist())
 
 
+async def store_userdata(request):
+    return _ok(store.set_steam_userdata(await _body(request)))
+
+
 async def store_search(request):
     return _ok(await store.search(request.query.get("q", "")))
 
@@ -572,6 +576,7 @@ def setup(app):
     r.add_post("/api/store/refresh", store_refresh)
     r.add_post("/api/store/import", store_import)
     r.add_get("/api/store/search", store_search)
+    r.add_post("/api/store/userdata", store_userdata)
     r.add_post("/api/store/track", store_track)
     r.add_post("/api/store/untrack", store_untrack)
     r.add_get("/api/store/notifications", store_notifications)

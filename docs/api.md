@@ -57,6 +57,7 @@ El token está en `~/.config/deckhub/token` del Deck. Las rutas protegidas respo
 | POST | `/api/store/import` | importa la lista de deseados de Steam |
 | POST | `/api/store/refresh` | revisa precios ahora |
 | GET | `/api/store/search` | `?q=` |
+| POST | `/api/store/userdata` | datos de la tienda leídos por el plugin (deseados, ignorados, seguidos, etiquetas) |
 | POST | `/api/store/track` | `{appid, target?, notify_low?}` (`target` en centavos) |
 | POST | `/api/store/untrack` | `{appid}` |
 | GET | `/api/store/notifications` | alertas pendientes (las entrega el plugin) |

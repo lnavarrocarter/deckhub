@@ -205,26 +205,61 @@ async def refresh(appids=None):
     return {"checked": len(info)}
 
 
-async def import_wishlist():
-    sid = _steamid()
-    if not sid:
-        raise ValueError("No encontré tu cuenta de Steam en el Deck.")
-    async with _session() as s:
-        w = await _json(s, "GET", f"{STEAM_API}/IWishlistService/GetWishlist/v1/", params={"steamid": sid})
-    items = w.get("response", {}).get("items", [])
-    if not items:
-        raise ValueError("Tu lista de deseados de Steam está vacía o es privada "
-                         "(Steam → Perfil → Privacidad → Detalles de juegos: Público).")
-    d = _load()
+def _add_wishlist(d, appids):
     new = 0
-    for it in items:
-        k = str(it["appid"])
+    for a in appids:
+        k = str(int(a))
         if k not in d["tracked"]:
             d["tracked"][k] = {"name": None, "source": "wishlist", "added": time.time(), "target": None,
                                "notify_low": True}
             new += 1
+        else:
+            d["tracked"][k].setdefault("source", "wishlist")
+    return new
+
+
+def set_steam_userdata(data):
+    """Datos de la tienda que el plugin lee con tu sesión de Steam (deseados, ignorados,
+    seguidos, etiquetas recomendadas). Con la sincronización activa, los nuevos deseados
+    pasan a seguirse solos."""
+    d = _load()
+
+    def ints(k):
+        return [int(x) for x in (data.get(k) or []) if str(x).isdigit()]
+    d["userdata"] = {"wishlist": ints("wishlist"), "ignored": ints("ignored"), "followed": ints("followed"),
+                     "recommended_tags": data.get("recommended_tags") or [], "recommended_apps": ints("recommended_apps"),
+                     "owned": ints("owned"), "updated": time.time()}
+    new = _add_wishlist(d, d["userdata"]["wishlist"]) if d.get("wishlist_sync") else 0
     _save(d)
-    await refresh([it["appid"] for it in items])
+    return new
+
+
+async def import_wishlist():
+    """Importa la lista de deseados: por la API pública si el perfil lo permite y, si
+    no, con los datos que el plugin lee desde el cliente de Steam."""
+    d = _load()
+    items = []
+    sid = _steamid()
+    if sid:
+        async with _session() as s:
+            try:
+                w = await _json(s, "GET", f"{STEAM_API}/IWishlistService/GetWishlist/v1/", params={"steamid": sid})
+                items = [it["appid"] for it in w.get("response", {}).get("items", [])]
+            except Exception as e:
+                log.info("API pública de deseados: %s", e)
+    ud = d.get("userdata") or {}
+    if not items and ud.get("wishlist") and time.time() - ud.get("updated", 0) < 86400:
+        items = ud["wishlist"]
+    d["wishlist_sync"] = True
+    if not items:
+        # Se le pide al plugin que lea los datos desde Steam; el panel vuelve a intentar.
+        from . import custom
+        custom._queue_action({"type": "store_sync"})
+        _save(d)
+        return {"pending": True}
+    new = _add_wishlist(d, items)
+    _save(d)
+    await refresh(items)
     return {"total": len(items), "new": new}
 
 
@@ -272,6 +307,8 @@ def collect():
     currency = next((c for c, k in CURRENCY_COUNTRY.items() if k == cc), "USD")
     return {"items": items, "last_check": d.get("last_check"), "country": cc, "currency": currency,
             "itad_key_set": bool(cfg.get("itad_key")), "steamid": _steamid(),
+            "wishlist_sync": bool(d.get("wishlist_sync")),
+            "userdata_updated": (d.get("userdata") or {}).get("updated"),
             "notifications": d["notifications"][-20:][::-1]}
 
 
@@ -297,8 +334,12 @@ async def loop():
     await asyncio.sleep(60)
     while True:
         try:
-            if _load()["tracked"] and time.time() - (_load().get("last_check") or 0) >= CHECK_EVERY:
+            d = _load()
+            fresh = [int(k) for k, t in d["tracked"].items() if not t.get("price")]
+            if d["tracked"] and time.time() - (d.get("last_check") or 0) >= CHECK_EVERY:
                 await refresh()
+            elif fresh:
+                await refresh(fresh)  # recién llegados por la sincronización
         except Exception as e:
             log.warning("revisión de precios falló: %s", e)
-        await asyncio.sleep(900)
+        await asyncio.sleep(300)

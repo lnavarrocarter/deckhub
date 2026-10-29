@@ -1,5 +1,10 @@
 # Cambios
 
+## 0.8.1 (2026-10-29)
+
+- La lista de deseados se importa desde el cliente de Steam (con tu sesión) aunque el perfil no la muestre, y se sincroniza cada 30 minutos.
+- Se guardan también ignorados, seguidos y etiquetas recomendadas de la tienda, para las recomendaciones.
+
 ## 0.8.0 (2026-10-29)
 
 - Pestaña «Ofertas»: seguimiento de precios de Steam en tu moneda (lista de deseados o búsqueda), descuento y fin de la oferta, compatibilidad con Deck, reseñas y mínimo histórico (DeckHub o IsThereAnyDeal).

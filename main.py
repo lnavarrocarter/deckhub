@@ -172,6 +172,13 @@ class Plugin:
         except Exception:
             return False
 
+    async def report_store_userdata(self, data):
+        try:
+            r = await asyncio.to_thread(_request, "/api/store/userdata", data)
+            return r.get("data", 0)
+        except Exception:
+            return 0
+
     async def get_store_notifications(self):
         try:
             r = await asyncio.to_thread(_request, "/api/store/notifications")

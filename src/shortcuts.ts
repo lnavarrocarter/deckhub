@@ -1,6 +1,7 @@
 // Aplica la cola de accesos directos del daemon usando la API interna de Steam.
 // Corre mientras Decky esté cargado, no solo con el panel abierto.
 import { callable, toaster } from "@decky/api";
+import { syncStoreUserdata } from "./library";
 
 declare const SteamClient: any;
 declare const appStore: any;
@@ -52,7 +53,8 @@ type DeckyAction =
   | { id: string; type: "css_reset" }
   | { id: string; type: "css_install"; name: string; theme_id: string; deps: number }
   | { id: string; type: "css_state"; name: string; active: boolean }
-  | { id: string; type: "steam"; action: string; appid: number; value: any };
+  | { id: string; type: "steam"; action: string; appid: number; value: any }
+  | { id: string; type: "store_sync" };
 
 // Acciones sobre un juego pedidas desde el detalle del panel web.
 async function steamAction(a: { action: string; appid: number; value: any }) {
@@ -120,6 +122,9 @@ async function applyActions() {
           body: a.deps ? `${a.name} instalado con ${a.deps} temas` : `${a.name} instalado`,
         });
         cssChanged = true;
+      } else if (a.type === "store_sync") {
+        const added = await syncStoreUserdata();
+        toaster.toast({ title: "DeckHub · Ofertas", body: `Lista de deseados sincronizada${added ? ` (${added} nuevos)` : ""}` });
       } else if (a.type === "steam") {
         await steamAction(a);
       } else if (a.type === "css_state") {
