@@ -298,6 +298,19 @@ async def custom_themes_toggle(request):
     return _ok()
 
 
+async def decky_install(request):
+    return _ok(await custom.request_plugin_install((await _body(request))["name"]))
+
+
+async def decky_actions_pending(request):
+    return _ok(custom.pending_actions())
+
+
+async def decky_actions_ack(request):
+    custom.ack_action((await _body(request))["id"])
+    return _ok()
+
+
 async def custom_themes_remove(request):
     custom.remove_theme((await _body(request))["folder"])
     return _ok()
@@ -467,6 +480,9 @@ def setup(app):
     r.add_post("/api/custom/themes/install", custom_themes_install)
     r.add_post("/api/custom/themes/toggle", custom_themes_toggle)
     r.add_post("/api/custom/themes/remove", custom_themes_remove)
+    r.add_post("/api/decky/install", decky_install)
+    r.add_get("/api/decky/actions/pending", decky_actions_pending)
+    r.add_post("/api/decky/actions/ack", decky_actions_ack)
     r.add_get("/api/settings", settings_get)
     r.add_post("/api/settings", settings_set)
     r.add_get("/api/saves", saves_list)

@@ -850,8 +850,8 @@ function renderThemes() {
   const t = custom.themes;
   if ($("thTarget").options.length === 1) $("thTarget").innerHTML += t.targets.map(x => `<option>${esc(x)}</option>`).join("");
   $("thStatus").innerHTML = t.css_loader
-    ? "Los temas los aplica <b>CSS Loader</b>. Tras instalar o activar uno, abre CSS Loader en el menú rápido y pulsa <b>Actualizar</b> si no se ve al momento."
-    : "⚠ Falta <b>CSS Loader</b>: instálalo desde la tienda de Decky (menú rápido → Decky → tienda). Puedes instalar temas ya; se aplicarán cuando lo tengas.";
+    ? "✓ <b>CSS Loader</b> instalado: los temas que instales, actives o quites aquí se aplican en el Deck en unos segundos."
+    : `⚠ Falta <b>CSS Loader</b>, el plugin de Decky que aplica los temas. <button class="b primary" id="thInstallLoader">Instalar CSS Loader</button>`;
   $("thInstalled").innerHTML = t.installed.length
     ? `<table><thead><tr><th>Tema instalado</th><th>Categoría</th><th>Versión</th><th>Activo</th><th></th></tr></thead><tbody>${t.installed.map(x => `<tr>
         <td>${esc(x.name)} <span class="muted">· ${esc(x.author || "")}</span></td><td class="muted">${esc(x.target || "")}</td><td class="muted">${esc(x.version || "")}</td>
@@ -873,6 +873,17 @@ async function browseThemes(more) {
     $("thMore").hidden = thPage * 24 >= r.total;
   } catch (e) { $("thBrowse").innerHTML = `<p class="sub">Error: ${esc(e.message)}</p>`; }
 }
+$("thStatus").addEventListener("click", async e => {
+  if (!e.target.closest("#thInstallLoader")) return;
+  const r = await act(() => api("/api/decky/install", {name: "CSS Loader"}));
+  toast(`Confirma la instalación de CSS Loader ${r.version} en la pantalla del Deck`);
+  // Se comprueba durante un minuto si ya quedó instalado.
+  for (let i = 0; i < 12; i++) {
+    await new Promise(res => setTimeout(res, 5000));
+    custom = await api("/api/custom");
+    if (custom.themes.css_loader) { renderThemes(); toast("CSS Loader instalado"); break; }
+  }
+});
 $("thGo").onclick = () => browseThemes(false);
 $("thSearch").onkeydown = e => { if (e.key === "Enter") browseThemes(false); };
 $("thTarget").onchange = () => browseThemes(false);

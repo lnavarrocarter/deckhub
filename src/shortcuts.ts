@@ -47,6 +47,34 @@ async function applyArt() {
   return items.length;
 }
 
+type DeckyAction =
+  | { id: string; type: "install"; name: string; version: string; hash: string; artifact: string }
+  | { id: string; type: "css_reset" };
+const getPendingActions = callable<[], DeckyAction[]>("get_pending_actions");
+const ackAction = callable<[string], boolean>("ack_action");
+
+// Acciones pedidas desde el panel web que solo se pueden hacer dentro de Decky:
+// instalar un plugin (con las mismas llamadas que la tienda, que pide confirmación
+// en pantalla) y recargar CSS Loader tras cambiar temas.
+async function applyActions() {
+  const items = await getPendingActions();
+  const backend = (window as any).DeckyBackend;
+  if (!items.length || !backend?.call) return;
+  for (const a of items) {
+    await ackAction(a.id); // antes, para no repetirla si Decky se recarga
+    try {
+      if (a.type === "install") {
+        await backend.call("utilities/install_plugin", a.artifact, a.name, a.version, a.hash, 0 /* INSTALL */);
+      } else if (a.type === "css_reset") {
+        // CSS Loader usa la API antigua de Decky (sin api_version).
+        await backend.call("loader/call_legacy_plugin_method", "CSS Loader", "reset", {});
+      }
+    } catch (e: any) {
+      toaster.toast({ title: "DeckHub", body: `Acción ${a.type} falló: ${e?.message ?? e}` });
+    }
+  }
+}
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function overview(appid: number) {
@@ -112,6 +140,7 @@ export async function syncShortcuts() {
       }
     }
     const art = await applyArt();
+    await applyActions();
     if (added || removed || art) {
       const parts = [
         added && `${added} juegos añadidos`,

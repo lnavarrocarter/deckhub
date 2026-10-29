@@ -42,7 +42,7 @@ Objetivo: que DeckHub abarque la mayor parte de la configuración del Deck, desd
 - [x] **Temas (skins) del modo juego**: integración con CSS Loader / DeckThemes: explorar, instalar, activar y desactivar temas desde el panel.
 - [x] **Fondo de escritorio** KDE (`plasma-apply-wallpaperimage`, o en la configuración si estás en modo juego).
 - [ ] Fondo del modo juego con imagen propia (generando un tema de CSS Loader).
-- [ ] Recargar CSS Loader automáticamente tras instalar/activar un tema.
+- [x] Instalar CSS Loader desde el hub y recargarlo automáticamente tras cambiar temas.
 
 ### Fase B · Sistema y rendimiento en el plugin
 

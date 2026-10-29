@@ -244,6 +244,60 @@ def css_loader_installed():
     return False
 
 
+# Acciones que el plugin ejecuta dentro de Decky:
+# - "install": instalar un plugin de la tienda (Decky pide confirmación en pantalla).
+# - "css_reset": recargar CSS Loader tras cambiar temas desde el panel.
+DECKY_STORE = "https://plugins.deckbrew.xyz/plugins"
+DECKY_CDN = "https://cdn.tzatzikiweeb.moe/file/steam-deck-homebrew/versions"
+ACTIONS = CONF / "decky-actions.json"
+
+
+def _load_actions():
+    try:
+        q = json.loads(ACTIONS.read_text())
+    except (OSError, ValueError):
+        return []
+    # Una petición vieja (Steam cerrado mucho tiempo) no debe aparecer por sorpresa.
+    return [a for a in q if time.time() - a.get("requested", 0) < 600]
+
+
+def _queue_action(action):
+    q = [a for a in _load_actions() if a["type"] != action["type"] or a.get("name") != action.get("name")]
+    q.append({**action, "id": uuid.uuid4().hex[:12], "requested": time.time()})
+    CONF.mkdir(parents=True, exist_ok=True)
+    ACTIONS.write_text(json.dumps(q))
+
+
+async def request_plugin_install(name):
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=20)) as s:
+        try:
+            async with s.get(DECKY_STORE, params={"query": name}) as r:
+                r.raise_for_status()
+                plugins = await r.json()
+        except Exception as e:
+            raise RuntimeError(f"La tienda de Decky no responde: {artwork.describe(e)}")
+    found = next((p for p in plugins if p.get("name") == name and p.get("versions")), None)
+    if not found:
+        raise ValueError(f"«{name}» no está en la tienda de Decky.")
+    ver = found["versions"][0]
+    _queue_action({"type": "install", "name": name, "version": ver["name"], "hash": ver["hash"],
+                   "artifact": ver.get("artifact") or f"{DECKY_CDN}/{ver['hash']}.zip"})
+    return {"name": name, "version": ver["name"]}
+
+
+def request_css_reset():
+    if css_loader_installed():
+        _queue_action({"type": "css_reset"})
+
+
+def pending_actions():
+    return _load_actions()
+
+
+def ack_action(action_id):
+    ACTIONS.write_text(json.dumps([a for a in _load_actions() if a["id"] != action_id]))
+
+
 def _theme_cfg(folder):
     # CSS Loader corre como root o como usuario según la versión: se escriben ambos.
     return [folder / "config_USER.json", folder / "config_ROOT.json"]
@@ -357,10 +411,12 @@ def set_theme_active(folder, active):
             cfg = {}
         cfg["active"] = bool(active)
         f.write_text(json.dumps(cfg))
+    request_css_reset()
 
 
 def remove_theme(folder):
     fileops.trash([str(_theme_folder(folder))])
+    request_css_reset()
 
 
 async def collect():

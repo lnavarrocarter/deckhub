@@ -61,7 +61,7 @@ Comprobaciones: el zip debe tener al menos 20 `.nca`, las llaves deben contener 
 ## Personalización
 
 - **Portadas de la biblioteca**: busca cualquier juego (de Steam o acceso directo), elige el tipo (portada vertical, horizontal, fondo o logo) y haz clic en una de las opciones de SteamGridDB. El plugin la aplica en Steam en segundos. «Restaurar originales» quita las imágenes personalizadas.
-- **Temas del modo juego**: explora DeckThemes por categoría, instala, activa/desactiva y quita temas. Los aplica [CSS Loader](https://deckthemes.com) (se instala desde la tienda de Decky); tras un cambio, pulsa «Actualizar» en CSS Loader si no se ve al momento.
+- **Temas del modo juego**: explora DeckThemes por categoría, instala, activa/desactiva y quita temas. Los aplica [CSS Loader](https://deckthemes.com): si falta, el botón «Instalar CSS Loader» lo pide a Decky, que muestra su confirmación en la pantalla del Deck. Cada cambio recarga CSS Loader solo.
 - **Videos de arranque**: sube `.webm` a `~/.local/share/Steam/config/uioverrides/movies/`; se eligen en Steam → Ajustes → Personalización. «Usar siempre» lo copia como `deck_startup.webm`, que tiene prioridad.
 - **Fondo de escritorio** (KDE): sube imágenes o elige las del sistema. En modo juego se guarda y se aplica al entrar al escritorio.
 

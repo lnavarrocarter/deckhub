@@ -79,6 +79,9 @@ El token está en `~/.config/deckhub/token` del Deck. Las rutas protegidas respo
 | POST | `/api/custom/themes/install` | `{id}` (DeckThemes) |
 | POST | `/api/custom/themes/toggle` | `{folder, active}` |
 | POST | `/api/custom/themes/remove` | `{folder}` |
+| POST | `/api/decky/install` | `{name}`: instala un plugin de la tienda de Decky (confirmación en el Deck) |
+| GET | `/api/decky/actions/pending` | acciones para el plugin (`install`, `css_reset`) |
+| POST | `/api/decky/actions/ack` | `{id}` |
 
 ## Ajustes, partidas y trucos
 

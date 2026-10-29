@@ -172,6 +172,20 @@ class Plugin:
         except Exception:
             return False
 
+    async def get_pending_actions(self):
+        try:
+            r = await asyncio.to_thread(_request, "/api/decky/actions/pending")
+            return r.get("data", [])
+        except Exception:
+            return []
+
+    async def ack_action(self, action_id):
+        try:
+            await asyncio.to_thread(_request, "/api/decky/actions/ack", {"id": action_id})
+            return True
+        except Exception:
+            return False
+
     async def report_library(self, apps):
         try:
             await asyncio.to_thread(_request, "/api/steam/playtime", {"apps": apps})

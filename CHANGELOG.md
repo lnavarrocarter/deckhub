@@ -1,5 +1,10 @@
 # Cambios
 
+## 0.5.2 (2026-10-29)
+
+- Botón «Instalar CSS Loader» en Personalización: la instalación la hace Decky, con su confirmación en pantalla.
+- Instalar, activar o quitar un tema recarga CSS Loader automáticamente.
+
 ## 0.5.0 (2026-10-29)
 
 - Pestaña «Personalización»:

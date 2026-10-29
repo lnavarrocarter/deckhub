@@ -59,6 +59,7 @@ Cada módulo de estado expone `async def collect() -> dict` y se registra en `mo
   - Hace de puente: lee el token y llama al daemon en `127.0.0.1:8765`.
 - `src/index.tsx`: panel del menú rápido (sistema, unidades, red, Steam, dirección y token del panel web).
 - `src/shortcuts.ts`: cada 5 s pide al daemon la cola pendiente y la aplica con la API interna de Steam (`SteamClient.Apps.AddShortcut`, `SetCustomArtworkForApp`, colecciones). Así el daemon nunca edita `shortcuts.vdf` con Steam abierto.
+  - En el mismo ciclo aplica las portadas personalizadas y las acciones de Decky: instalar un plugin de la tienda (`utilities/install_plugin`, con la confirmación de Decky) y recargar CSS Loader (`reset`).
 
 ## Principios
 
