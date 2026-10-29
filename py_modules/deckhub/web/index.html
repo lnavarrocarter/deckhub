@@ -80,8 +80,22 @@
   .gallery .pick.on, .gallery .pick:hover { border-color: var(--accent); }
   .gallery .pick img { width: 100%; display: block; }
   .gallery .theme { border: 1px solid var(--line); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 4px; grid-column: span 2; }
+  .gallery .theme video { width: 100%; border-radius: 4px; aspect-ratio: 16/10; object-fit: cover; background: #000; }
   .gallery .theme img { width: 100%; border-radius: 4px; aspect-ratio: 16/10; object-fit: cover; }
   .gallery .theme .muted { color: var(--muted); font-size: 12px; }
+  .gallery.capsules { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); max-height: 360px; overflow-y: auto; }
+  .gallery.capsules .pick { aspect-ratio: 2/3; display: flex; align-items: center; justify-content: center; background: var(--line); }
+  .gallery.capsules .pick img { height: 100%; object-fit: cover; }
+  .cap-name { font-size: 11px; padding: 4px; color: var(--text); }
+  .artkind h3 { margin: 14px 0 6px; }
+  .artrow { display: grid; grid-template-columns: 160px 1fr; gap: 10px; align-items: start; }
+  .artrow.wide, .artrow.hero, .artrow.logo { grid-template-columns: 240px 1fr; }
+  .artrow figure { margin: 0; border: 1px solid var(--line); border-radius: 6px; padding: 4px; min-height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .artrow figure img { width: 100%; border-radius: 4px; }
+  .artrow.logo figure { background: repeating-conic-gradient(var(--line) 0 25%, transparent 0 50%) 0 0/16px 16px; }
+  .artrow figcaption { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .artrow .gallery { max-height: 300px; overflow-y: auto; }
+  @media (max-width: 640px) { .artrow, .artrow.wide, .artrow.hero, .artrow.logo { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -222,16 +236,16 @@
   <section class="tab" id="tab-custom">
     <div class="card">
       <h2>Portadas de la biblioteca</h2>
-      <p class="sub" style="margin-top:0">Elige un juego (de Steam o acceso directo) y una imagen de SteamGridDB. El plugin la aplica en Steam en unos segundos.</p>
+      <p class="sub" style="margin-top:0">Elige un juego para ver sus imágenes actuales y las opciones de SteamGridDB de cada tipo. Haz clic en una opción y el plugin la aplica en Steam en unos segundos.</p>
       <div class="toolbar">
-        <input id="cuGame" class="grow" list="cuGames" placeholder="Busca un juego de tu biblioteca">
+        <input id="cuGame" class="grow" list="cuGames" placeholder="Busca cualquier juego de tu biblioteca">
         <datalist id="cuGames"></datalist>
-        <select id="cuKind"><option value="grid">Portada vertical</option><option value="wide">Portada horizontal</option><option value="hero">Fondo (hero)</option><option value="logo">Logo</option></select>
-        <button class="b primary" id="cuSearch">Ver opciones</button>
-        <button class="b" id="cuReset" title="Quitar las imágenes personalizadas de este juego">Restaurar originales</button>
+        <button class="b" id="cuReset" title="Quitar las imágenes personalizadas de este juego" disabled>Restaurar originales</button>
       </div>
+      <h3>Instalados</h3>
+      <div class="gallery capsules" id="cuInstalled"></div>
       <p class="sub" id="cuArtStatus"></p>
-      <div class="gallery" id="cuArt"></div>
+      <div id="cuArt"></div>
     </div>
 
     <div class="card">
@@ -254,6 +268,14 @@
       <div class="toolbar"><button class="b primary" id="mvUpload">Subir video .webm</button><button class="b" id="mvClear">Volver al video elegido en Steam</button></div>
       <div id="mvProgress"></div>
       <div id="mvList"></div>
+      <h3>Recomendados para descargar · steamdeckrepo.com</h3>
+      <div class="toolbar">
+        <input id="recMvSearch" class="grow" placeholder="Buscar (Zelda, PlayStation, retro…)">
+        <select id="recMvSort"><option value="trending">Tendencia</option><option value="downloads-desc">Más descargados</option><option value="likes-desc">Más gustados</option><option value="created_at-desc">Nuevos</option></select>
+        <button class="b" id="recMvGo">Buscar</button>
+      </div>
+      <div class="gallery" id="recMv"></div>
+      <div class="toolbar"><span class="grow"></span><button class="b" id="recMvMore" hidden>Ver más</button></div>
     </div>
 
     <div class="card">
@@ -262,6 +284,14 @@
       <div class="toolbar"><button class="b primary" id="wpUpload">Subir imagen</button></div>
       <div id="wpProgress"></div>
       <div class="gallery wide" id="wpList"></div>
+      <h3>Recomendados para descargar · Wallhaven (solo contenido apto)</h3>
+      <div class="toolbar">
+        <input id="recWpSearch" class="grow" placeholder="Buscar fondos (vacío = más populares)">
+        <button class="b" id="recWpGo">Buscar</button>
+      </div>
+      <div class="toolbar" id="recWpChips"><button class="b" data-q="landscape">Paisajes</button><button class="b" data-q="pixel art">Pixel art</button><button class="b" data-q="retro">Retro</button><button class="b" data-q="minimalism">Minimalista</button><button class="b" data-q="space">Espacio</button><button class="b" data-q="video games">Videojuegos</button><button class="b" data-q="anime">Anime</button></div>
+      <div class="gallery" id="recWp"></div>
+      <div class="toolbar"><span class="grow"></span><button class="b" id="recWpMore" hidden>Ver más</button></div>
     </div>
   </section>
 
@@ -813,36 +843,71 @@ async function loadCustom() {
   const [c, pt] = await Promise.all([api("/api/custom"), library.length ? null : api("/api/steam/playtime")]);
   custom = c;
   if (pt) {
-    library = pt.apps.slice().sort((a, b) => a.name.localeCompare(b.name));
-    $("cuGames").innerHTML = library.map(a => `<option value="${esc(a.name)}">`).join("");
+    library = pt.apps.slice().sort((a, b) => (b.installed - a.installed) || a.name.localeCompare(b.name));
+    $("cuGames").innerHTML = library.map(a => `<option value="${esc(a.name)}" label="${a.installed ? "Instalado" : "No instalado"} · ${a.shortcut ? "acceso directo" : "Steam"}">`).join("");
+    renderInstalled();
   }
   if (!library.length) $("cuArtStatus").textContent = "Aún no hay lista de juegos: el plugin de Decky la envía unos segundos después de abrir Steam.";
   renderThemes(); renderMovies(); renderWalls();
 }
 
 // Portadas
-const cuSelected = () => library.find(a => a.name === $("cuGame").value.trim());
-$("cuSearch").onclick = async () => {
-  const g = cuSelected();
-  if (!g) return toast("Elige un juego de la lista");
-  $("cuArtStatus").textContent = "Buscando en SteamGridDB…"; $("cuArt").innerHTML = "";
-  try {
-    const q = new URLSearchParams({appid: g.appid, kind: $("cuKind").value, title: g.name, shortcut: g.shortcut ? "1" : "0"});
-    const items = await api("/api/custom/art/options?" + q);
-    $("cuArtStatus").textContent = items.length ? `${items.length} opciones para ${g.name} · haz clic en una para aplicarla` : "SteamGridDB no tiene imágenes de este tipo para el juego.";
-    $("cuArt").className = "gallery" + ($("cuKind").value === "grid" ? "" : " wide");
-    $("cuArt").innerHTML = items.map(i => `<button class="pick" data-url="${esc(i.url)}" title="${esc(i.style || "")} ${i.width || ""}×${i.height || ""}"><img loading="lazy" src="${esc(i.thumb)}"></button>`).join("");
-  } catch (e) { $("cuArtStatus").textContent = "Error: " + e.message; }
+const KINDS = [["grid", "Portada vertical"], ["wide", "Portada horizontal"], ["hero", "Fondo (hero)"], ["logo", "Logo"]];
+let cuGame = null;
+const artImg = c => c ? `<img loading="lazy" src="${preview(c.path)}&v=${c.mtime}">` : `<span class="muted">sin imagen</span>`;
+
+async function renderInstalled() {
+  const inst = library.filter(a => a.installed).sort((a, b) => (b.last_played || 0) - (a.last_played || 0));
+  if (!inst.length) { $("cuInstalled").innerHTML = `<p class="sub">Sin juegos instalados en la lista.</p>`; return; }
+  const cur = await api("/api/custom/art/current?appids=" + inst.map(a => a.appid).join(","));
+  $("cuInstalled").innerHTML = inst.map(a => `<button class="pick ${cuGame?.appid === a.appid ? "on" : ""}" data-appid="${a.appid}" title="${esc(a.name)}">
+    ${cur[a.appid]?.grid ? artImg(cur[a.appid].grid) : `<span class="cap-name">${esc(a.name)}</span>`}</button>`).join("");
+}
+$("cuInstalled").onclick = e => {
+  const b = e.target.closest("[data-appid]"); if (!b) return;
+  selectGame(library.find(a => a.appid === +b.dataset.appid));
 };
+$("cuGame").onchange = () => { const g = library.find(a => a.name === $("cuGame").value.trim()); if (g) selectGame(g); };
+
+async function selectGame(g) {
+  cuGame = g; $("cuGame").value = g.name; $("cuReset").disabled = false;
+  $("cuInstalled").querySelectorAll(".pick").forEach(x => x.classList.toggle("on", +x.dataset.appid === g.appid));
+  $("cuArtStatus").textContent = `${g.name} · ${g.shortcut ? "acceso directo" : "Steam"}${g.installed ? " · instalado" : ""}`;
+  $("cuArt").innerHTML = KINDS.map(([k, label]) => `<div class="artkind"><h3>${label}</h3><div class="artrow ${k}">
+    <figure id="cuCur-${k}">${artImg(null)}</figure><div class="gallery ${k === "grid" ? "" : "wide"}" data-kind="${k}"><p class="sub">Buscando…</p></div></div></div>`).join("");
+  refreshCurrent();
+  await Promise.all(KINDS.map(async ([k]) => {
+    const box = $("cuArt").querySelector(`[data-kind="${k}"]`);
+    try {
+      const q = new URLSearchParams({appid: g.appid, kind: k, title: g.name, shortcut: g.shortcut ? "1" : "0"});
+      const items = await api("/api/custom/art/options?" + q);
+      if (cuGame !== g) return;
+      box.innerHTML = items.length
+        ? items.map(i => `<button class="pick" data-url="${esc(i.url)}" title="${esc(i.style || "")} ${i.width || ""}×${i.height || ""}"><img loading="lazy" src="${esc(i.thumb)}"></button>`).join("")
+        : `<p class="sub">SteamGridDB no tiene imágenes de este tipo.</p>`;
+    } catch (e) { box.innerHTML = `<p class="sub">Error: ${esc(e.message)}</p>`; }
+  }));
+}
+async function refreshCurrent() {
+  if (!cuGame) return;
+  const cur = await api("/api/custom/art/current?appid=" + cuGame.appid);
+  for (const [k] of KINDS) {
+    const f = $("cuCur-" + k); if (!f) continue;
+    f.innerHTML = artImg(cur[k]) + `<figcaption>Actual · ${cur[k] ? (cur[k].custom ? "personalizada" : "original") : "—"}</figcaption>`;
+  }
+}
 $("cuArt").onclick = async e => {
-  const b = e.target.closest("button[data-url]"); const g = cuSelected(); if (!b || !g) return;
-  await act(() => api("/api/custom/art/apply", {appid: g.appid, kind: $("cuKind").value, url: b.dataset.url}), `Aplicando en Steam: ${g.name}`);
-  $("cuArt").querySelectorAll(".pick").forEach(x => x.classList.toggle("on", x === b));
+  const b = e.target.closest("button[data-url]"); if (!b || !cuGame) return;
+  const kind = b.closest("[data-kind]").dataset.kind;
+  await act(() => api("/api/custom/art/apply", {appid: cuGame.appid, kind, url: b.dataset.url}), `Aplicando en Steam: ${cuGame.name}`);
+  b.closest("[data-kind]").querySelectorAll(".pick").forEach(x => x.classList.toggle("on", x === b));
+  setTimeout(() => { refreshCurrent(); if (kind === "grid") renderInstalled(); }, 8000);
 };
 $("cuReset").onclick = async () => {
-  const g = cuSelected(); if (!g) return toast("Elige un juego de la lista");
-  if (!confirm(`¿Quitar las imágenes personalizadas de «${g.name}» y volver a las originales?`)) return;
-  await act(() => api("/api/custom/art/reset", {appid: g.appid}), "Restaurando en Steam…");
+  if (!cuGame) return;
+  if (!confirm(`¿Quitar las imágenes personalizadas de «${cuGame.name}» y volver a las originales?`)) return;
+  await act(() => api("/api/custom/art/reset", {appid: cuGame.appid}), "Restaurando en Steam…");
+  setTimeout(() => { refreshCurrent(); renderInstalled(); }, 8000);
 };
 
 // Temas
@@ -892,7 +957,12 @@ $("tab-custom").addEventListener("click", async e => {
   const b = e.target.closest("[data-th-install], [data-th-remove]"); if (!b) return;
   if (b.dataset.thInstall) {
     b.disabled = true; b.textContent = "Instalando…";
-    try { await act(() => api("/api/custom/themes/install", {id: b.dataset.thInstall}), "Tema instalado y activado"); b.textContent = "Instalado"; } catch { b.disabled = false; b.textContent = "Instalar"; }
+    try {
+      const r = await act(() => api("/api/custom/themes/install", {id: b.dataset.thInstall}));
+      toast(r.via === "css_loader" ? `CSS Loader está instalando ${r.name}${r.deps ? ` y ${r.deps} temas que necesita` : ""}…` : "Tema instalado y activado");
+      b.textContent = "Instalado";
+      if (r.via === "css_loader") setTimeout(async () => { custom = await api("/api/custom"); renderThemes(); }, 15000);
+    } catch { b.disabled = false; b.textContent = "Instalar"; }
   } else {
     if (!confirm(`¿Quitar el tema «${b.dataset.thRemove}»? (va a la papelera)`)) return;
     await act(() => api("/api/custom/themes/remove", {folder: b.dataset.thRemove}), "Tema quitado");
@@ -946,7 +1016,73 @@ $("wpList").onclick = async e => {
   toast(r.applied === "now" ? "Fondo aplicado" : "Fondo guardado: se verá al entrar al modo escritorio");
   custom = await api("/api/custom"); renderWalls();
 };
-loaders.custom = async () => { await loadCustom(); if (!$("thBrowse").innerHTML) browseThemes(false); };
+
+// Recomendaciones descargables: videos (steamdeckrepo.com) y fondos (Wallhaven, solo SFW)
+let recMvPage = 1, recWpPage = 1;
+async function browseRecMovies(more) {
+  recMvPage = more ? recMvPage + 1 : 1;
+  if (!more) $("recMv").innerHTML = `<p class="sub">Cargando…</p>`;
+  try {
+    const r = await api("/api/custom/movies/browse?" + new URLSearchParams({search: $("recMvSearch").value.trim(), sort: $("recMvSort").value, page: recMvPage}));
+    const cards = r.items.map(m => `<div class="theme">
+      <video muted loop playsinline preload="none" poster="${esc(m.thumbnail || "")}" src="${esc(m.preview || m.video)}" onmouseenter="this.play()" onmouseleave="this.pause()"></video>
+      <div><b>${esc(m.title)}</b></div>
+      <div class="muted">${m.duration ? m.duration + " s · " : ""}♥ ${m.likes ?? 0} · ⬇ ${m.downloads ?? 0} · ${esc(m.author || "")}</div>
+      <button class="b ${m.installed ? "" : "primary"}" data-rec-mv="${esc(m.video)}" data-slug="${esc(m.slug)}" ${m.installed ? "disabled" : ""}>${m.installed ? "Descargado" : "Descargar"}</button></div>`).join("");
+    if (more) $("recMv").insertAdjacentHTML("beforeend", cards); else $("recMv").innerHTML = cards || `<p class="sub">Sin resultados.</p>`;
+    $("recMvMore").hidden = r.items.length < 10;
+  } catch (e) { $("recMv").innerHTML = `<p class="sub">Error: ${esc(e.message)}</p>`; }
+}
+$("recMvGo").onclick = () => browseRecMovies(false);
+$("recMvSearch").onkeydown = e => { if (e.key === "Enter") browseRecMovies(false); };
+$("recMvSort").onchange = () => browseRecMovies(false);
+$("recMvMore").onclick = () => browseRecMovies(true);
+$("recMv").onclick = async e => {
+  const b = e.target.closest("[data-rec-mv]"); if (!b) return;
+  b.disabled = true; b.textContent = "Descargando…";
+  try {
+    const name = await act(() => api("/api/custom/movies/download", {video: b.dataset.recMv, slug: b.dataset.slug}));
+    b.textContent = "Descargado"; toast(`Descargado: ${name} · elígelo en Steam → Personalización o con «Usar siempre»`);
+    custom = await api("/api/custom"); renderMovies();
+  } catch { b.disabled = false; b.textContent = "Descargar"; }
+};
+
+async function browseRecWalls(more) {
+  recWpPage = more ? recWpPage + 1 : 1;
+  if (!more) $("recWp").innerHTML = `<p class="sub">Cargando…</p>`;
+  try {
+    const r = await api("/api/custom/wallpaper/browse?" + new URLSearchParams({q: $("recWpSearch").value.trim(), page: recWpPage}));
+    const cards = r.items.map(w => `<div class="theme">
+      <img loading="lazy" src="${esc(w.thumb)}">
+      <div class="muted">${esc(w.resolution || "")}</div>
+      <div class="toolbar" style="margin:0">
+        <button class="b primary" data-rec-wp="${esc(w.full)}" data-apply="1">Usar de fondo</button>
+        <button class="b" data-rec-wp="${esc(w.full)}" ${w.installed ? "disabled" : ""}>${w.installed ? "Guardado" : "Guardar"}</button>
+      </div></div>`).join("");
+    if (more) $("recWp").insertAdjacentHTML("beforeend", cards); else $("recWp").innerHTML = cards || `<p class="sub">Sin resultados.</p>`;
+    $("recWpMore").hidden = recWpPage >= r.last_page;
+  } catch (e) { $("recWp").innerHTML = `<p class="sub">Error: ${esc(e.message)}</p>`; }
+}
+$("recWpGo").onclick = () => browseRecWalls(false);
+$("recWpSearch").onkeydown = e => { if (e.key === "Enter") browseRecWalls(false); };
+$("recWpChips").onclick = e => { const c = e.target.closest("[data-q]"); if (!c) return; $("recWpSearch").value = c.dataset.q; browseRecWalls(false); };
+$("recWpMore").onclick = () => browseRecWalls(true);
+$("recWp").onclick = async e => {
+  const b = e.target.closest("[data-rec-wp]"); if (!b) return;
+  const apply = !!b.dataset.apply; b.disabled = true;
+  try {
+    const r = await act(() => api("/api/custom/wallpaper/download", {url: b.dataset.recWp, apply}));
+    toast(!apply ? "Guardado en tus fondos" : r.applied === "now" ? "Fondo aplicado" : "Fondo guardado: se verá al entrar al modo escritorio");
+    custom = await api("/api/custom"); renderWalls();
+  } catch {}
+  b.disabled = false;
+};
+loaders.custom = async () => {
+  await loadCustom();
+  if (!$("thBrowse").innerHTML) browseThemes(false);
+  if (!$("recMv").innerHTML) browseRecMovies(false);
+  if (!$("recWp").innerHTML) browseRecWalls(false);
+};
 
 
 // --- Trucos ---------------------------------------------------------------------

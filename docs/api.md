@@ -67,6 +67,7 @@ El token está en `~/.config/deckhub/token` del Deck. Las rutas protegidas respo
 |---|---|---|
 | GET | `/api/custom` | videos, fondos, temas instalados y estado de CSS Loader |
 | GET | `/api/custom/art/options` | `?appid=&kind=grid\|wide\|hero\|logo&title=&shortcut=1` |
+| GET | `/api/custom/art/current` | `?appid=` o `?appids=1,2,3`: imagen actual de cada tipo (personalizada u original) |
 | POST | `/api/custom/art/apply` | `{appid, kind, url}` (solo URLs de SteamGridDB) |
 | POST | `/api/custom/art/reset` | `{appid, kinds?}` |
 | POST | `/api/custom/movies/upload` | multipart `.webm` |
@@ -74,13 +75,17 @@ El token está en `~/.config/deckhub/token` del Deck. Las rutas protegidas respo
 | POST | `/api/custom/movies/delete` | `{name}` |
 | POST | `/api/custom/wallpaper/upload` | multipart imagen |
 | POST | `/api/custom/wallpaper/set` | `{path}` |
-| GET | `/api/custom/preview` | `?path=` (fondos y videos) |
+| GET | `/api/custom/preview` | `?path=` (fondos, videos e imágenes de la biblioteca) |
+| GET | `/api/custom/movies/browse` | `?search=&sort=trending\|downloads-desc\|likes-desc\|created_at-desc&page=` (steamdeckrepo.com) |
+| POST | `/api/custom/movies/download` | `{video, slug}` |
+| GET | `/api/custom/wallpaper/browse` | `?q=&page=` (Wallhaven, solo SFW) |
+| POST | `/api/custom/wallpaper/download` | `{url, apply?}` |
 | GET | `/api/custom/themes/browse` | `?search=&target=&page=` |
 | POST | `/api/custom/themes/install` | `{id}` (DeckThemes) |
 | POST | `/api/custom/themes/toggle` | `{folder, active}` |
 | POST | `/api/custom/themes/remove` | `{folder}` |
 | POST | `/api/decky/install` | `{name}`: instala un plugin de la tienda de Decky (confirmación en el Deck) |
-| GET | `/api/decky/actions/pending` | acciones para el plugin (`install`, `css_reset`) |
+| GET | `/api/decky/actions/pending` | acciones para el plugin (`install`, `css_install`, `css_state`, `css_reset`) |
 | POST | `/api/decky/actions/ack` | `{id}` |
 
 ## Ajustes, partidas y trucos

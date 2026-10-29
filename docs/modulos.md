@@ -60,10 +60,10 @@ Comprobaciones: el zip debe tener al menos 20 `.nca`, las llaves deben contener 
 
 ## Personalización
 
-- **Portadas de la biblioteca**: busca cualquier juego (de Steam o acceso directo), elige el tipo (portada vertical, horizontal, fondo o logo) y haz clic en una de las opciones de SteamGridDB. El plugin la aplica en Steam en segundos. «Restaurar originales» quita las imágenes personalizadas.
-- **Temas del modo juego**: explora DeckThemes por categoría, instala, activa/desactiva y quita temas. Los aplica [CSS Loader](https://deckthemes.com): si falta, el botón «Instalar CSS Loader» lo pide a Decky, que muestra su confirmación en la pantalla del Deck. Cada cambio recarga CSS Loader solo.
-- **Videos de arranque**: sube `.webm` a `~/.local/share/Steam/config/uioverrides/movies/`; se eligen en Steam → Ajustes → Personalización. «Usar siempre» lo copia como `deck_startup.webm`, que tiene prioridad.
-- **Fondo de escritorio** (KDE): sube imágenes o elige las del sistema. En modo juego se guarda y se aplica al entrar al escritorio.
+- **Portadas de la biblioteca**: tus juegos instalados aparecen con su portada actual. Al elegir uno (o buscar cualquier juego de la biblioteca) se ven sus 4 imágenes actuales (portada vertical, horizontal, fondo y logo; marcadas como originales o personalizadas) y las opciones de SteamGridDB de cada tipo. Un clic aplica la imagen en Steam. «Restaurar originales» quita las personalizadas.
+- **Temas del modo juego**: explora DeckThemes por categoría, instala, activa/desactiva y quita temas. Con [CSS Loader](https://deckthemes.com) instalado, la instalación la hace CSS Loader (incluidas las dependencias, como los temas de un perfil) y su lista se recarga sola. Si falta, el botón «Instalar CSS Loader» lo pide a Decky, que muestra su confirmación en la pantalla del Deck.
+- **Videos de arranque**: sube `.webm` a `~/.local/share/Steam/config/uioverrides/movies/`; se eligen en Steam → Ajustes → Personalización. «Usar siempre» lo copia como `deck_startup.webm`, que tiene prioridad. **Recomendados**: videos de la comunidad de [steamdeckrepo.com](https://steamdeckrepo.com) (tendencia, más descargados, búsqueda) con vista previa y descarga en un clic.
+- **Fondo de escritorio** (KDE): sube imágenes o elige las del sistema. En modo juego se guarda y se aplica al entrar al escritorio. **Recomendados**: fondos de [Wallhaven](https://wallhaven.cc) filtrados como aptos para todos (SFW), con búsqueda y categorías; «Usar de fondo» lo descarga y aplica.
 
 Todo lo que se quita va a la papelera.
 

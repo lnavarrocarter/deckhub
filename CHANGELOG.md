@@ -1,5 +1,11 @@
 # Cambios
 
+## 0.6.0 (2026-10-29)
+
+- Temas: con CSS Loader instalado, instalar/activar pasa por CSS Loader (trae las dependencias de los perfiles) y su interfaz se recarga para mostrar los cambios. Antes los perfiles quedaban sin sus temas.
+- Portadas: galería de juegos instalados con su portada actual; al elegir un juego se ven sus 4 imágenes actuales y las opciones de cada tipo a la vez.
+- Videos de arranque recomendados de steamdeckrepo.com y fondos de escritorio de Wallhaven (solo SFW), con descarga en un clic.
+
 ## 0.5.2 (2026-10-29)
 
 - Botón «Instalar CSS Loader» en Personalización: la instalación la hace Decky, con su confirmación en pantalla.

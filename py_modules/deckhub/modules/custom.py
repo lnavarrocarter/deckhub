@@ -3,6 +3,7 @@ escritorio y temas del modo juego (instalados para CSS Loader).
 """
 import asyncio
 import json
+import re
 import shutil
 import subprocess
 import tempfile
@@ -101,6 +102,50 @@ def art_reset(appid, kinds):
     _save_queue(q)
 
 
+STEAM = HOME / ".local/share/Steam"
+LIBCACHE = STEAM / "appcache/librarycache"
+# Nombre en config/grid (personalizada) y en librarycache (original de Steam).
+ART_FILES = {"grid": ("{id}p", ["library_capsule", "library_600x900"]),
+             "wide": ("{id}", ["library_header", "header"]),
+             "hero": ("{id}_hero", ["library_hero"]),
+             "logo": ("{id}_logo", ["logo"])}
+
+
+def _grid_dir():
+    # Usuario de Steam usado más recientemente.
+    users = sorted((STEAM / "userdata").glob("*/config/localconfig.vdf"),
+                   key=lambda p: p.stat().st_mtime, reverse=True)
+    return users[0].parent / "grid" if users else None
+
+
+def art_current(appid):
+    """Imagen que muestra Steam ahora para cada tipo: personalizada u original."""
+    appid = int(appid)
+    grid = _grid_dir()
+    out = {}
+    for kind, (custom_name, originals) in ART_FILES.items():
+        found = None
+        if grid:
+            for ext in ("png", "jpg", "jpeg", "webp"):
+                f = grid / f"{custom_name.format(id=appid)}.{ext}"
+                if f.exists():
+                    found = {"path": str(f), "custom": True}
+                    break
+        if not found:
+            folder = LIBCACHE / str(appid)
+            for name in originals:
+                hits = list(folder.rglob(f"{name}.*")) if folder.is_dir() else []
+                hits += list(LIBCACHE.glob(f"{appid}_{name}.*"))  # formato antiguo
+                hits = [h for h in hits if "blur" not in h.name]
+                if hits:
+                    found = {"path": str(hits[0]), "custom": False}
+                    break
+        if found:
+            found["mtime"] = int(Path(found["path"]).stat().st_mtime)
+        out[kind] = found
+    return out
+
+
 def pending_art():
     """Mismo formato que shortcuts.pending_art, con clave «custom:<id>»."""
     return [{"key": f"custom:{i['id']}", "appid": i["appid"], "title": "", "images": i["images"],
@@ -151,6 +196,91 @@ def movie_clear_default():
 
 def movie_delete(name):
     fileops.trash([str(check_movie(str(MOVIES / name)))])
+
+
+# Recomendaciones descargables: videos de la comunidad de steamdeckrepo.com.
+DECKREPO = "https://steamdeckrepo.com/api/posts"
+DECKREPO_SORTS = ["trending", "downloads-desc", "likes-desc", "created_at-desc"]
+
+
+async def _get_json(url, params, source):
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=20),
+                                     headers={"User-Agent": "DeckHub"}) as s:
+        try:
+            async with s.get(url, params=params) as r:
+                r.raise_for_status()
+                return await r.json()
+        except Exception as e:
+            raise RuntimeError(f"{source} no responde: {artwork.describe(e)}")
+
+
+async def _download(url, hosts, dest):
+    host = urlparse(url).hostname or ""
+    if urlparse(url).scheme != "https" or not any(host == h or host.endswith("." + h) for h in hosts):
+        raise ValueError("Origen de descarga no permitido.")
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dest.with_name(dest.name + ".part")
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=180),
+                                     headers={"User-Agent": "DeckHub"}) as s:
+        try:
+            async with s.get(url) as r:
+                r.raise_for_status()
+                with open(tmp, "wb") as f:
+                    async for chunk in r.content.iter_chunked(1 << 20):
+                        f.write(chunk)
+        except Exception as e:
+            tmp.unlink(missing_ok=True)
+            raise RuntimeError(f"No pude descargar: {artwork.describe(e)}")
+    tmp.replace(dest)
+    return dest
+
+
+def _movie_name(slug):
+    return fileops._check_name(re.sub(r"[^\w.-]+", "_", slug)[:115] + ".webm")
+
+
+async def browse_movies(search="", sort="trending", page=1):
+    params = {"page": max(1, int(page)), "sort": sort if sort in DECKREPO_SORTS else "trending"}
+    if search:
+        params["search"] = search
+    data = await _get_json(DECKREPO, params, "steamdeckrepo.com")
+    have = {p.name for p in MOVIES.glob("*.webm")} if MOVIES.exists() else set()
+    return {"items": [{
+        "id": p["id"], "title": p["title"], "author": (p.get("user") or {}).get("steam_name"),
+        "thumbnail": p.get("thumbnail"), "preview": p.get("video_preview"), "video": p.get("video"),
+        "duration": p.get("video_duration"), "likes": p.get("likes"), "downloads": p.get("downloads"),
+        "installed": _movie_name(p["slug"]) in have, "slug": p["slug"],
+    } for p in data.get("posts", [])
+        # steamdeckrepo también tiene videos de suspensión, que van en otro sitio.
+        if p.get("type", "boot_video") == "boot_video" and p.get("video", "").endswith(".webm")]}
+
+
+async def download_movie(video, slug):
+    dest = await _download(video, ("steamdeckrepo.com",), MOVIES / _movie_name(slug))
+    return dest.name
+
+
+# Fondos recomendados: Wallhaven, solo contenido apto (purity=100) y sin fotos de personas.
+WALLHAVEN = "https://wallhaven.cc/api/v1/search"
+
+
+async def browse_wallpapers(query="", page=1):
+    params = {"purity": "100", "categories": "110", "atleast": "1280x800", "ratios": "16x10,16x9",
+              "sorting": "toplist" if not query else "relevance", "page": max(1, int(page))}
+    if query:
+        params["q"] = query
+    data = await _get_json(WALLHAVEN, params, "Wallhaven")
+    have = {p.name for p in WALL_DIR.glob("*")} if WALL_DIR.exists() else set()
+    return {"last_page": data.get("meta", {}).get("last_page", 1), "items": [{
+        "id": w["id"], "thumb": w["thumbs"]["small"], "full": w["path"], "resolution": w.get("resolution"),
+        "installed": Path(w["path"]).name in have,
+    } for w in data.get("data", []) if w.get("purity") == "sfw"]}
+
+
+async def download_wallpaper(url, apply=False):
+    dest = await _download(url, ("wallhaven.cc",), WALL_DIR / fileops._check_name(Path(urlparse(url).path).name))
+    check_wallpaper(str(dest))
+    return {"path": str(dest), **(set_wallpaper(str(dest)) if apply else {})}
 
 
 # --- Fondo de escritorio (modo escritorio KDE) ---------------------------------
@@ -218,9 +348,12 @@ def check_wallpaper(path):
 
 
 def preview_path(path):
-    """Archivo que se puede mostrar en el panel (fondos y videos de arranque)."""
+    """Archivo que se puede mostrar en el panel: fondos, videos de arranque e
+    imágenes de la biblioteca de Steam."""
     p = Path(path).resolve()
-    if p.is_file() and p.parent in (WALL_DIR, SYSTEM_WALLS, MOVIES):
+    grid = _grid_dir()
+    if p.is_file() and (p.parent in (WALL_DIR, SYSTEM_WALLS, MOVIES) or (grid and p.parent == grid.resolve())
+                        or LIBCACHE.resolve() in p.parents):
         return p
     raise ValueError("vista previa no permitida")
 
@@ -262,6 +395,7 @@ def _load_actions():
 
 
 def _queue_action(action):
+    # Una acción nueva sobre el mismo tema/plugin reemplaza a la pendiente.
     q = [a for a in _load_actions() if a["type"] != action["type"] or a.get("name") != action.get("name")]
     q.append({**action, "id": uuid.uuid4().hex[:12], "requested": time.time()})
     CONF.mkdir(parents=True, exist_ok=True)
@@ -372,11 +506,17 @@ def _extract_theme(blob):
 
 
 async def install_theme(theme_id):
+    """Con CSS Loader instalado se le pide a él (instala también las dependencias, como
+    los temas de un perfil, y actualiza su lista). Sin él, se descomprime aquí."""
     async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=60)) as s:
         try:
             async with s.get(f"{DECKTHEMES}/themes/{quote(theme_id)}") as r:
                 r.raise_for_status()
                 meta = await r.json()
+            if css_loader_installed():
+                _queue_action({"type": "css_install", "name": meta["name"], "theme_id": theme_id,
+                               "deps": len(meta.get("dependencies") or [])})
+                return {"name": meta["name"], "via": "css_loader", "deps": len(meta.get("dependencies") or [])}
             async with s.get(f"{DECKTHEMES}/blobs/{meta['download']['id']}") as r:
                 r.raise_for_status()
                 blob = await r.read()
@@ -389,10 +529,10 @@ async def install_theme(theme_id):
         if dst.exists():
             fileops.trash([str(dst)])  # versión anterior a la papelera
         shutil.move(str(src), str(dst))
-        set_theme_active(dst.name, True)
+        _write_active(dst, True)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
-    return dst.name
+    return {"name": dst.name, "via": "local", "deps": 0}
 
 
 def _theme_folder(folder):
@@ -402,8 +542,7 @@ def _theme_folder(folder):
     return d
 
 
-def set_theme_active(folder, active):
-    d = _theme_folder(folder)
+def _write_active(d, active):
     for f in _theme_cfg(d):
         try:
             cfg = json.loads(f.read_text())
@@ -411,7 +550,16 @@ def set_theme_active(folder, active):
             cfg = {}
         cfg["active"] = bool(active)
         f.write_text(json.dumps(cfg))
-    request_css_reset()
+
+
+def set_theme_active(folder, active):
+    d = _theme_folder(folder)
+    if css_loader_installed():
+        # CSS Loader activa también las dependencias (perfiles) y guarda el estado.
+        name = json.loads((d / "theme.json").read_text()).get("name", d.name)
+        _queue_action({"type": "css_state", "name": name, "active": bool(active)})
+    else:
+        _write_active(d, active)
 
 
 def remove_theme(folder):

@@ -233,6 +233,15 @@ async def custom_art_options(request):
                                         q.get("title", ""), q.get("shortcut") == "1"))
 
 
+async def custom_art_current(request):
+    """?appid=N para un juego, o ?appids=1,2,3 para varios (mapa por AppID)."""
+    q = request.query
+    if "appids" in q:
+        ids = [i for i in q["appids"].split(",") if i.strip().isdigit()][:200]
+        return _ok({i: custom.art_current(i) for i in ids})
+    return _ok(custom.art_current(q.get("appid", "0")))
+
+
 async def custom_art_apply(request):
     b = await _body(request)
     await custom.art_apply(b["appid"], b["kind"], b["url"])
@@ -277,6 +286,26 @@ async def custom_wallpaper_upload(request):
 
 async def custom_wallpaper_set(request):
     return _ok(custom.set_wallpaper((await _body(request))["path"]))
+
+
+async def custom_movies_browse(request):
+    q = request.query
+    return _ok(await custom.browse_movies(q.get("search", ""), q.get("sort", "trending"), q.get("page", "1")))
+
+
+async def custom_movies_download(request):
+    b = await _body(request)
+    return _ok(await custom.download_movie(b["video"], b["slug"]))
+
+
+async def custom_wallpaper_browse(request):
+    q = request.query
+    return _ok(await custom.browse_wallpapers(q.get("q", ""), q.get("page", "1")))
+
+
+async def custom_wallpaper_download(request):
+    b = await _body(request)
+    return _ok(await custom.download_wallpaper(b["url"], bool(b.get("apply"))))
 
 
 async def custom_preview(request):
@@ -468,6 +497,7 @@ def setup(app):
     r.add_post("/api/steam/playtime", playtime_report)
     r.add_get("/api/custom", custom_get)
     r.add_get("/api/custom/art/options", custom_art_options)
+    r.add_get("/api/custom/art/current", custom_art_current)
     r.add_post("/api/custom/art/apply", custom_art_apply)
     r.add_post("/api/custom/art/reset", custom_art_reset)
     r.add_post("/api/custom/movies/upload", custom_movie_upload)
@@ -476,6 +506,10 @@ def setup(app):
     r.add_post("/api/custom/wallpaper/upload", custom_wallpaper_upload)
     r.add_post("/api/custom/wallpaper/set", custom_wallpaper_set)
     r.add_get("/api/custom/preview", custom_preview)
+    r.add_get("/api/custom/movies/browse", custom_movies_browse)
+    r.add_post("/api/custom/movies/download", custom_movies_download)
+    r.add_get("/api/custom/wallpaper/browse", custom_wallpaper_browse)
+    r.add_post("/api/custom/wallpaper/download", custom_wallpaper_download)
     r.add_get("/api/custom/themes/browse", custom_themes_browse)
     r.add_post("/api/custom/themes/install", custom_themes_install)
     r.add_post("/api/custom/themes/toggle", custom_themes_toggle)

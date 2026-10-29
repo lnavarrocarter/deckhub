@@ -49,7 +49,24 @@ async function applyArt() {
 
 type DeckyAction =
   | { id: string; type: "install"; name: string; version: string; hash: string; artifact: string }
-  | { id: string; type: "css_reset" };
+  | { id: string; type: "css_reset" }
+  | { id: string; type: "css_install"; name: string; theme_id: string; deps: number }
+  | { id: string; type: "css_state"; name: string; active: boolean };
+
+const DECKTHEMES = "https://api.deckthemes.com/";
+
+// CSS Loader usa la API antigua de Decky (sin api_version).
+function cssLoader(method: string, args: Record<string, unknown> = {}) {
+  return (window as any).DeckyBackend.call("loader/call_legacy_plugin_method", "CSS Loader", method, args);
+}
+
+// La interfaz de CSS Loader guarda su propia lista de temas: se recarga su frontend
+// (como hace Decky al actualizar un plugin) para que muestre los cambios.
+async function refreshCssLoaderUI() {
+  const loader = (window as any).DeckyPluginLoader;
+  const p = loader?.plugins?.find((x: any) => x.name === "CSS Loader");
+  if (p) await loader.importPlugin(p.name, p.version, p.loadType);
+}
 const getPendingActions = callable<[], DeckyAction[]>("get_pending_actions");
 const ackAction = callable<[string], boolean>("ack_action");
 
@@ -60,19 +77,34 @@ async function applyActions() {
   const items = await getPendingActions();
   const backend = (window as any).DeckyBackend;
   if (!items.length || !backend?.call) return;
+  let cssChanged = false;
   for (const a of items) {
     await ackAction(a.id); // antes, para no repetirla si Decky se recarga
     try {
       if (a.type === "install") {
         await backend.call("utilities/install_plugin", a.artifact, a.name, a.version, a.hash, 0 /* INSTALL */);
       } else if (a.type === "css_reset") {
-        // CSS Loader usa la API antigua de Decky (sin api_version).
-        await backend.call("loader/call_legacy_plugin_method", "CSS Loader", "reset", {});
+        await cssLoader("reset");
+        cssChanged = true;
+      } else if (a.type === "css_install") {
+        // El instalador de CSS Loader trae también las dependencias (temas de un perfil).
+        await cssLoader("download_theme_from_url", { id: a.theme_id, url: DECKTHEMES });
+        await cssLoader("reset");
+        await cssLoader("set_theme_state", { name: a.name, state: true });
+        toaster.toast({
+          title: "DeckHub · Temas",
+          body: a.deps ? `${a.name} instalado con ${a.deps} temas` : `${a.name} instalado`,
+        });
+        cssChanged = true;
+      } else if (a.type === "css_state") {
+        await cssLoader("set_theme_state", { name: a.name, state: a.active });
+        cssChanged = true;
       }
     } catch (e: any) {
       toaster.toast({ title: "DeckHub", body: `Acción ${a.type} falló: ${e?.message ?? e}` });
     }
   }
+  if (cssChanged) await refreshCssLoaderUI().catch((e) => console.warn("DeckHub: CSS Loader", e));
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
