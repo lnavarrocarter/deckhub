@@ -5,16 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DeckHub</title>
 <style>
+  /* Colores: ver «Componentes y estados» en la propuesta de diseño. */
   :root {
-    --bg: #f4f5f7; --card: #ffffff; --text: #1b1f24; --muted: #66707c; --line: #e3e6ea;
-    --accent: #1a9fff; --ok: #22a06b; --warn: #d9822b; --bad: #d64545; --bar: #e8ebef; --hover: #eef1f4;
+    --bg: #f4f5f7; --card: #ffffff; --card2: #eef1f4; --text: #1b1f24; --muted: #5f6975; --line: #e3e6ea;
+    --accent: #1677d9; --link: #0b6bcb; --ok: #1d8a5a; --warn: #b8691b; --bad: #c43d4b; --bar: #e8ebef; --hover: #e9eef5;
+    --side: #ffffff; --shadow: 0 10px 30px rgba(20, 30, 50, .12);
   }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #14171c; --card: #1d2128; --text: #e6e9ed; --muted: #8b95a1; --line: #2a3039; --bar: #2a3039; --hover: #252a32; }
+    :root { --bg: #0d1015; --card: #181d25; --card2: #232a34; --text: #e8ecf1; --muted: #9aa5b1; --line: #262d37;
+      --link: #5cb1ff; --ok: #6fe0a5; --warn: #f0b44c; --bad: #ff9a9a; --bar: #232a34; --hover: #1d2633;
+      --side: #12161c; --shadow: 0 12px 32px rgba(0, 0, 0, .5); }
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
-  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 Inter, system-ui, -apple-system, "Segoe UI", sans-serif; }
   .wrap { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
   header { display: flex; align-items: baseline; gap: 12px; padding-top: 18px; flex-wrap: wrap; }
   header h1 { margin: 0; font-size: 20px; }
@@ -159,7 +163,244 @@
   .onboard .step .ic { width: 22px; text-align: center; }
   .onboard .step.done { opacity: .6; }
   .onboard .step .grow { flex: 1; }
+
+  /* --- Base visual (propuesta de layout) ----------------------------------- */
+  a { color: var(--link); }
+  .card { border: 0; border-radius: 14px; }
+  .card h2 { letter-spacing: .07em; font-size: 12px; }
+  button.b, a.b { border: 0; background: var(--card2); border-radius: 10px; min-height: 38px; padding: 0 14px; display: inline-flex; align-items: center; gap: 6px; }
+  button.b:hover, a.b:hover { background: var(--hover); outline: 1px solid var(--line); }
+  button.b.primary { border: 0; font-weight: 600; }
+  button.b.danger { background: color-mix(in srgb, var(--bad) 14%, var(--card)); color: var(--bad); font-weight: 600; }
+  input[type=text], input[type=search], input[type=password], input[type=number], select, textarea { border-radius: 10px; min-height: 38px; }
+  .pill { border: 0; background: var(--card2); font-weight: 600; }
+  .pill.ok { background: color-mix(in srgb, var(--ok) 16%, var(--card)); }
+  .pill.bad { background: color-mix(in srgb, var(--bad) 16%, var(--card)); }
+  .pill.warn { color: var(--warn); background: color-mix(in srgb, var(--warn) 16%, var(--card)); }
+  .tag { border-radius: 6px; font-weight: 600; padding: 2px 7px; }
+  .tag.warn { color: var(--warn); }
+  h1.page { margin: 0 0 4px; font-size: 28px; font-weight: 800; letter-spacing: -.02em; }
+  .lead { color: var(--muted); margin: 0 0 18px; }
+
+  /* Juegos */
+  .banner.info { background: color-mix(in srgb, var(--accent) 16%, var(--card)); align-items: center; }
+  .banner.info .sub { display: block; }
+  .recent { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 14px; margin: 10px 0 22px; }
+  .rcard { position: relative; height: 210px; border-radius: 16px; overflow: hidden; background: var(--card2) center/cover no-repeat; color: #fff; text-align: left; border: 0; padding: 16px; display: flex; flex-direction: column; justify-content: flex-end; cursor: pointer; font: inherit; }
+  .rcard::before { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(8,10,14,.85), rgba(8,10,14,.1) 60%); }
+  .rcard > * { position: relative; }
+  .rcard .meta { font-size: 12px; color: rgba(255,255,255,.78); }
+  .rcard .t { font-size: 18px; font-weight: 800; letter-spacing: -.01em; }
+  .rcard:first-child .t { font-size: 28px; }
+  .rcard .play { position: absolute; top: 12px; right: 12px; min-height: 38px; padding: 0 16px; border-radius: 19px; background: rgba(13,16,21,.72); color: #fff; border: 0; font: inherit; font-weight: 600; cursor: pointer; }
+  .rcard .play:hover { background: var(--accent); }
+  .libcard { padding-top: 16px; }
+  .libtitle { margin: 0 8px 0 0 !important; font-size: 20px !important; text-transform: none !important; letter-spacing: -.01em !important; color: var(--text) !important; font-weight: 700 !important; }
+  .seg { border: 0; background: var(--card2); padding: 3px; border-radius: 11px; gap: 2px; }
+  .seg button { border-radius: 8px; background: transparent; }
+  .seg button + button { border-left: 0; }
+  .seg .cnt { opacity: .7; font-size: 12px; margin-left: 2px; }
+  .gcard .cover .play { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(13,16,21,.55); }
+  .gcard .cover .play span { min-height: 38px; display: inline-flex; align-items: center; padding: 0 16px; border-radius: 19px; background: var(--accent); color: #fff; font-weight: 600; }
+  .gcard:hover .cover .play, .gcard:focus-within .cover .play { display: flex; }
+  .gcard .src.pending { color: var(--warn); font-weight: 600; }
+  @media (max-width: 760px) {
+    .recent { grid-template-columns: 1fr; }
+    .rcard { height: 150px; }
+    .rcard:not(:first-child) { display: none; }
+    .gcard .cover .play { display: none !important; }
+  }
+
+  /* Ofertas */
+  .phead { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  .phead .lead { margin: 0; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .kpi { text-align: left; border: 2px solid transparent; background: var(--card); border-radius: 14px; padding: 14px 16px; color: var(--text); font: inherit; cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
+  .kpi b { font-size: 26px; font-weight: 800; }
+  .kpi.on { border-color: var(--accent); }
+  .kpi.sale b { color: #9fcc3b; } .kpi.low b { color: var(--ok); } .kpi.alert b { color: var(--warn); }
+  .split { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+  .smain { flex: 999 1 560px; min-width: 0; }
+  .sside { flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips button { min-height: 38px; padding: 0 14px; border-radius: 19px; border: 0; background: var(--card); color: var(--muted); font: inherit; cursor: pointer; }
+  .chips button.on { background: var(--accent); color: #fff; }
+  .deal { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 12px; background: var(--card); border-radius: 14px; margin-bottom: 10px; border: 1px solid transparent; }
+  .deal.atlow { border-color: color-mix(in srgb, var(--ok) 45%, transparent); }
+  .dcap img { width: 170px; height: 64px; object-fit: cover; border-radius: 8px; display: block; }
+  .dinfo { flex: 1 1 200px; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .dinfo b { font-size: 15px; }
+  .dtags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .dspark { margin: 0; flex: 0 0 120px; }
+  .dprice { flex: 0 0 150px; text-align: right; display: flex; flex-direction: column; gap: 2px; }
+  .dprice .pr { font-size: 20px; font-weight: 800; }
+  .dprice .okc { color: var(--ok); font-weight: 600; }
+  .dalert { display: flex; align-items: flex-end; gap: 6px; }
+  .dalert label { display: flex; flex-direction: column; gap: 2px; font-size: 11px; }
+  .dalert input.target { width: 100px; min-height: 40px; }
+  .hbtn.bell { color: var(--muted); background: var(--card2); }
+  .hbtn.bell.on { color: var(--warn); }
+  .dalert .hbtn { background: var(--card2); }
+  .note { display: flex; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .note:first-child { border-top: 0; }
+  .note .ndot { flex: 0 0 9px; height: 9px; margin-top: 6px; border-radius: 50%; background: var(--line); }
+  .note.new .ndot { background: var(--warn); }
+  .note div { flex: 1; min-width: 0; } .note b { display: block; font-size: 14px; } .note .sub { font-size: 13px; }
+  @media (max-width: 760px) {
+    .dcap img { width: 110px; height: 52px; }
+    .dspark { display: none; }
+    .dprice { flex: 1 1 auto; text-align: left; }
+    .dalert { width: 100%; justify-content: flex-end; }
+  }
+
+  /* Emuladores */
+  h2.sect { font-size: 18px !important; text-transform: none !important; letter-spacing: -.01em !important; color: var(--text) !important; margin: 22px 0 10px !important; font-weight: 700 !important; }
+  .eicon { border-radius: 16px; object-fit: contain; background: var(--card2); flex: none; }
+  .eicon.ph { display: inline-flex; align-items: center; justify-content: center; font-weight: 800; color: var(--muted); }
+  .eicon.s88 { width: 88px; height: 88px; padding: 10px; font-size: 32px; border-radius: 20px; }
+  .eicon.s64 { width: 56px; height: 56px; padding: 8px; font-size: 24px; }
+  .eicon.s44 { width: 44px; height: 44px; padding: 6px; font-size: 18px; border-radius: 12px; }
+  .emu { background: var(--card); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .emu .ename { font-size: 18px; font-weight: 700; }
+  .emu.attention { flex-direction: row; flex-wrap: wrap; gap: 18px; border: 1px solid color-mix(in srgb, var(--warn) 45%, transparent); margin-bottom: 14px; }
+  .emu .einfo { flex: 1 1 300px; display: flex; flex-direction: column; gap: 6px; }
+  .emu .eacts { flex: 0 1 230px; display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+  .emu .eprog { flex-basis: 100%; }
+  .emu .eprog:empty { display: none; }
+  .checks { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px; margin-top: 6px; }
+  .checks span { background: var(--card2); border-radius: 10px; padding: 9px 12px; font-size: 14px; }
+  .checks .ok { color: var(--ok); } .checks .no { color: var(--bad); }
+  .emugrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+  .estats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .estats div { background: var(--card2); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; }
+  .estats b { font-size: 18px; }
+  .emumore { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+  .emu.small { flex-direction: row; align-items: center; gap: 12px; padding: 12px; }
+
+  /* Partidas */
+  .emutabs { margin-bottom: 14px; }
+  .emutabs button { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px 0 6px; border-radius: 12px; }
+  .eicon.s24 { width: 30px; height: 30px; padding: 4px; border-radius: 8px; }
+  .emutabs button.on .eicon { background: rgba(255,255,255,.18); }
+  .emutabs .cnt { opacity: .75; font-size: 12px; }
+  table.saves td { padding: 10px 8px 10px 0; }
+  .bk { display: flex; align-items: center; gap: 6px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .bk:first-child { border-top: 0; }
+  .bk b { display: block; font-size: 14px; } .bk .sub { font-size: 12px; }
+  .bk .b { min-height: 34px; padding: 0 10px; }
+  .bar { height: 8px; border-radius: 4px; background: var(--card2); overflow: hidden; display: flex; margin: 10px 0 8px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--muted); }
+  .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; }
+  .banner.okb { background: color-mix(in srgb, var(--ok) 12%, var(--card)); }
+  .banner.okb .sub { display: block; margin-top: 2px; }
+  label.b input { margin: 0; }
+  .menu { position: fixed; z-index: 30; width: 280px; padding: 6px; border-radius: 12px; background: var(--card2); box-shadow: var(--shadow); display: flex; flex-direction: column; }
+  .menu button, .menu a { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 42px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; color: var(--text); font: inherit; text-align: left; text-decoration: none; cursor: pointer; }
+  .menu button:hover, .menu a:hover, .menu button:focus-visible, .menu a:focus-visible { background: var(--hover); }
+  .menu .danger { color: var(--bad); }
+  .menu hr { border: 0; border-top: 1px solid var(--line); margin: 4px 0; width: 100%; }
+  .menu .sub { font-size: 12px; }
+
+  /* Detalle de un juego */
+  dialog.big { max-width: 1120px; padding: 0; background: var(--bg); }
+  .ghero { min-height: 280px; padding: 20px 28px; }
+  .ghead h2 { font-size: 34px; font-weight: 800; letter-spacing: -.02em; }
+  button.b.big { min-height: 48px; padding: 0 24px; font-size: 16px; border-radius: 12px; }
+  .dtabs { background: var(--side); padding: 0 20px; }
+  .dtabs button { min-height: 50px; font-weight: 600; }
+  .gbody { padding: 20px 28px 28px; }
+  .dgrid { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+  .dmain { flex: 999 1 460px; min-width: 0; }
+  .dgrid aside { flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+  .dside { background: var(--card); border-radius: 14px; padding: 16px; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .stat { background: var(--card); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 2px; }
+  .stat b { font-size: 20px; }
+  .stat .sub { font-size: 12px; }
+  .thumbs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .thumb { border: 0; background: var(--card2); border-radius: 10px; padding: 8px; display: flex; flex-direction: column; gap: 4px; text-align: left; color: var(--text); font: inherit; font-size: 13px; cursor: pointer; }
+  .thumb img, .thumb .ph { width: 100%; border-radius: 6px; object-fit: cover; min-height: 40px; }
+  .thumb.grid img { aspect-ratio: 2/3; }
+  .thumb.wide img, .thumb.hero img { aspect-ratio: 92/43; }
+  .thumb.logo img { object-fit: contain; height: 56px; background: repeating-conic-gradient(var(--line) 0 25%, transparent 0 50%) 0 0/12px 12px; }
+  .thumb .sub { font-size: 11px; }
+  @media (max-width: 760px) {
+    dialog.big { max-width: none; width: 100%; height: 100%; max-height: none; margin: 0; border-radius: 0; }
+    .ghero { min-height: 220px; padding: 14px 16px; }
+    .ghead h2 { font-size: 26px; }
+    .gbody { padding: 14px 16px 24px; }
+    .gactions .b.big { flex: 1; }
+  }
+
+  /* Diálogos, notificación y avisos de conexión */
+  dialog { border: 0; border-radius: 16px; box-shadow: var(--shadow); padding: 22px; }
+  dialog.ask { max-width: 460px; background: var(--card2); }
+  dialog.ask h3 { margin: 0 0 8px; font-size: 18px; line-height: 1.3; }
+  dialog.ask p { margin: 0; line-height: 1.5; }
+  button.b.danger-solid { background: #c43d4b; color: #fff; font-weight: 600; }
+  #toast { border-radius: 12px; padding: 12px 16px; box-shadow: var(--shadow); font-weight: 500; }
+  .banner { display: flex; gap: 12px; align-items: flex-start; padding: 12px 16px; border-radius: 12px; margin: 0 0 14px; }
+  .banner.warn { background: color-mix(in srgb, var(--warn) 14%, var(--card)); }
+  .banner.bad { background: color-mix(in srgb, var(--bad) 14%, var(--card)); }
+  .banner b { display: block; }
+  .empty { text-align: center; padding: 28px 16px; color: var(--muted); }
+  .empty svg { opacity: .6; }
+  .empty b { display: block; color: var(--text); font-size: 16px; margin: 8px 0 4px; }
+  .skel { background: var(--card2); border-radius: 10px; animation: skel 1.4s ease-in-out infinite; }
+  @keyframes skel { 50% { opacity: .55; } }
+
+  /* Cabecera: logo, estado, búsqueda, alertas, idioma */
+  header { align-items: center; padding: 14px 0 10px; }
+  header h1 { font-weight: 800; letter-spacing: -.01em; }
+  .logo { display: inline-block; width: 12px; height: 12px; background: var(--accent); transform: rotate(45deg); border-radius: 2px; margin-right: 6px; font-size: 0; vertical-align: 1px; }
+  .hsearch { display: flex; align-items: center; gap: 8px; background: var(--card); border-radius: 12px; padding: 0 12px; min-height: 40px; flex: 0 1 380px; }
+  .hsearch input { border: 0 !important; background: transparent !important; width: 100%; min-height: 36px; outline: none; color: var(--text); font: inherit; }
+  .hbtn { position: relative; width: 40px; height: 40px; border-radius: 12px; border: 0; background: var(--card); color: var(--text); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+  .langsel { display: inline-flex; align-items: center; gap: 4px; }
+  .langsel select { max-width: 120px; min-height: 40px; border: 0; background: var(--card); }
+  #os { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  header h1, header > .sub:has(#live) { white-space: nowrap; flex: none; }
+  @media (min-width: 761px) { header { flex-wrap: nowrap; } }
+  .hbtn .dotn { position: absolute; top: 7px; right: 7px; width: 9px; height: 9px; border-radius: 50%; background: var(--warn); border: 2px solid var(--card); }
+
+  /* Menú con íconos y contadores */
+  nav#tabs button { display: flex; align-items: center; gap: 10px; }
+  nav#tabs button svg { flex: 0 0 18px; }
+  nav#tabs .count { margin-left: auto; font-size: 11px; font-weight: 700; color: #0d1015; background: var(--warn); border-radius: 10px; padding: 0 7px; }
+  nav#tabs [data-more] { display: none; }
+  @media (min-width: 1000px) {
+    .wrap { grid-template-columns: 220px minmax(0, 1fr); }
+    nav#tabs { background: var(--side); border-radius: 16px; padding: 10px 8px; }
+    nav#tabs button { border-left: 0; border-radius: 10px; min-height: 42px; color: var(--muted); font-weight: 500; }
+    nav#tabs button.on { background: var(--hover); color: var(--text); font-weight: 600; }
+  }
+
+  /* Móvil: pestañas abajo (Juegos, Ofertas, Emuladores, Partidas, Más) */
+  @media (max-width: 760px) {
+    body { padding-bottom: 84px; }
+    header { gap: 8px; }
+    #os, header > .sub:has(#live), header > .grow { display: none; }
+    header h1 { flex: 1; }
+    .hsearch { order: 10; flex: 1 1 100%; }
+    nav#tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; margin: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+      background: var(--side); border-top: 1px solid var(--line); border-bottom: 0; padding: 6px 4px 14px; overflow: visible; }
+    nav#tabs button { flex-direction: column; gap: 3px; border: 0; font-size: 11px; font-weight: 600; padding: 4px 0; min-height: 54px; justify-content: center; white-space: nowrap; }
+    nav#tabs button svg { width: 52px; height: 28px; padding: 4px 16px; border-radius: 14px; flex: none; }
+    nav#tabs button.on { color: var(--text); }
+    nav#tabs button.on svg { background: var(--hover); }
+    nav#tabs button:not([data-primary]):not([data-more]) { display: none; }
+    nav#tabs [data-more] { display: flex; }
+    nav#tabs .count { position: absolute; margin: 0 0 0 26px; top: 4px; }
+    nav#tabs button { position: relative; }
+    nav#tabs.more-open { grid-template-columns: 1fr; max-height: 75vh; overflow-y: auto; border-radius: 18px 18px 0 0; box-shadow: var(--shadow); }
+    nav#tabs.more-open button:not([data-primary]):not([data-more]) { display: flex; flex-direction: row; font-size: 15px; min-height: 48px; justify-content: flex-start; padding: 0 16px; gap: 12px; }
+    nav#tabs.more-open button svg { width: 20px; height: 20px; padding: 0; background: none !important; }
+    nav#tabs.more-open .navgroup { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 12px 16px 2px; }
+    nav#tabs.more-open button[data-primary] { display: none; }
+  }
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap">
 </head>
 <body>
 <div class="wrap">
@@ -168,19 +409,22 @@
     <span class="sub" id="os">conectando…</span>
     <span class="sub"><i class="dot" id="live"></i><span id="updated"></span></span>
     <span class="grow"></span>
-    <label class="sub langsel">🌐 <select id="langSel" aria-label="Idioma"><option value="auto">Automático (idioma de Steam)</option></select></label>
+    <label class="hsearch"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="color:var(--muted)"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+      <input type="search" id="globalSearch" placeholder="Buscar en tu biblioteca" aria-label="Buscar en tu biblioteca"></label>
+    <button class="hbtn" id="bellBtn" aria-label="Alertas de precio" title="Alertas de precio"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8"></path><path d="M10 20a2 2 0 0 0 4 0"></path></svg><span class="dotn" id="bellDot" hidden></span></button>
+    <label class="sub langsel">🌐 <select id="langSel" aria-label="Idioma"><option value="auto">Auto (Steam)</option></select></label>
   </header>
   <nav id="tabs">
     <span class="navgroup">Inicio</span>
     <button data-tab="summary" class="on">Resumen</button>
     <span class="navgroup">Juegos</span>
-    <button data-tab="games">Juegos</button>
+    <button data-tab="games" data-primary>Juegos</button>
     <button data-tab="playtime">Tiempo de juego</button>
-    <button data-tab="store">Ofertas</button>
+    <button data-tab="store" data-primary>Ofertas</button>
     <button data-tab="custom">Personalización</button>
     <span class="navgroup">Emulación</span>
-    <button data-tab="emulators">Emuladores</button>
-    <button data-tab="saves">Partidas</button>
+    <button data-tab="emulators" data-primary>Emuladores</button>
+    <button data-tab="saves" data-primary>Partidas</button>
     <button data-tab="cheats">Trucos</button>
     <span class="navgroup">Sistema</span>
     <button data-tab="drives">Unidades y espacio</button>
@@ -188,6 +432,7 @@
     <button data-tab="packages">Paquetes</button>
     <button data-tab="jobs">Tareas<span class="badge" id="jobsBadge" hidden></span></button>
     <button data-tab="settings">Ajustes</button>
+    <button type="button" data-more aria-label="Más secciones">Más</button>
   </nav>
 
   <section class="tab on" id="tab-summary">
@@ -241,13 +486,21 @@
   </section>
 
   <section class="tab" id="tab-games">
-    <div class="card" id="dlCard" hidden>
-      <div class="toolbar" style="margin:0"><h2 style="margin:0" class="grow">Descargas de Steam en espera</h2><button class="b primary" id="dlAll">Descargar todo</button></div>
-      <div id="dlList"></div>
+    <div class="banner info" id="dlCard" hidden>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="color:var(--link);flex:none;margin-top:2px"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"></path></svg>
+      <div class="grow" style="flex:1;min-width:0"><b id="dlTitle">Descargas de Steam en espera</b><span class="sub" id="dlSub"></span>
+        <details style="margin-top:6px"><summary class="sub" style="cursor:pointer">Ver detalle</summary><div id="dlList"></div></details></div>
+      <button class="b primary" id="dlAll">Descargar todo</button>
     </div>
-    <div class="card">
+    <div id="pluginBanner" class="banner warn" hidden><span style="color:var(--warn);font-weight:800">!</span><div><b>El plugin de Decky no responde</b><span class="sub">Abre Steam en el Deck. Jugar, las portadas y las descargas esperan a que vuelva.</span></div></div>
+    <section id="recentWrap" hidden>
+      <h1 class="page">Continuar jugando</h1>
+      <div class="recent" id="recentRow"></div>
+    </section>
+    <div class="card libcard">
       <div class="toolbar">
-        <div class="seg" id="libSource"><button data-src="" class="on">Todos</button><button data-src="steam">Steam</button><button data-src="rom">Emulación</button><button data-src="shortcut">Otros</button></div>
+        <h2 class="libtitle">Biblioteca</h2>
+        <div class="seg" id="libSource"><button data-src="" class="on">Todos <span class="cnt" id="cntAll"></span></button><button data-src="steam">Steam <span class="cnt" id="cntSteam"></span></button><button data-src="rom">Emulación <span class="cnt" id="cntRom"></span></button><button data-src="shortcut">Otros <span class="cnt" id="cntOther"></span></button></div>
         <label class="sub"><input type="checkbox" id="libInstalled" checked> Solo instalados</label>
         <select id="gameConsole"></select>
         <input type="search" id="gameFilter" placeholder="Buscar juego" class="grow">
@@ -273,19 +526,41 @@
   </dialog>
 
   <section class="tab" id="tab-emulators">
+    <div class="phead">
+      <div><h1 class="page">Emuladores</h1><p class="lead" id="emuLead"></p></div>
+      <button class="b" id="emuRescan">Volver a escanear juegos</button>
+    </div>
     <div id="emuStale"></div>
-    <div class="grid" id="emuList"></div>
+    <div id="emuList"><div class="emugrid"><div class="skel" style="height:180px"></div><div class="skel" style="height:180px"></div><div class="skel" style="height:180px"></div></div></div>
   </section>
 
   <section class="tab" id="tab-saves">
-    <div id="saveMigrate"></div>
-    <div id="saveList"></div>
-    <div class="card"><h2>Respaldos</h2>
-      <div class="toolbar"><label><input type="checkbox" id="bkDaily"> Respaldo automático diario</label>
-        <span class="sub">conservar</span><input type="text" id="bkKeep" style="width:50px"><span class="sub">automáticos por emulador</span><span class="grow"></span>
-        <span class="sub">Se guardan en ~/DeckHub/backups</span></div>
-      <div id="bkList"></div>
+    <div class="phead">
+      <div><h1 class="page">Partidas guardadas</h1><p class="lead" id="saveLead"></p></div>
+      <div class="toolbar" style="margin:0">
+        <label class="b"><input type="checkbox" id="bkDaily"> Respaldo diario</label>
+        <button class="b primary" id="saveAll">Respaldar todo ahora</button>
+      </div>
     </div>
+    <div id="saveMigrate"></div>
+    <div class="chips emutabs" id="saveTabs" role="tablist" aria-label="Emulador"></div>
+    <div class="split">
+      <div class="smain">
+        <div class="card">
+          <div class="toolbar"><h2 class="grow" style="margin:0" id="saveTitle"></h2><input type="search" id="saveSearch" placeholder="Buscar juego"></div>
+          <div id="saveList"></div>
+        </div>
+      </div>
+      <aside class="sside">
+        <div class="card"><h2>Historial de respaldos</h2><div id="bkList"></div></div>
+        <div class="card"><h2>Espacio de respaldos</h2><div id="bkSpace"></div>
+          <label class="toolbar" style="justify-content:space-between;margin:10px 0 0"><span class="sub">Conservar los últimos</span>
+            <select id="bkKeep"><option value="5">5 automáticos</option><option value="10">10 automáticos</option><option value="20">20 automáticos</option><option value="30">30 automáticos</option></select></label>
+        </div>
+        <div class="banner okb"><div><b>Antes de restaurar o eliminar</b><span class="sub">Restaurar hace primero un respaldo de lo actual. Eliminar manda la partida a la papelera: se puede recuperar.</span></div></div>
+      </aside>
+    </div>
+    <div class="menu" id="saveMenu" role="menu" hidden></div>
   </section>
 
   <section class="tab" id="tab-cheats">
@@ -331,25 +606,34 @@
   </section>
 
   <section class="tab" id="tab-store">
-    <div class="card">
-      <h2>Ofertas y seguimiento de precios</h2>
-      <p class="sub" style="margin-top:0" id="stStatus"></p>
-      <div class="toolbar">
-        <button class="b primary" id="stImport">Importar mi lista de deseados</button>
-        <button class="b" id="stRefresh">Revisar precios ahora</button>
-        <span class="grow"></span>
-        <label class="sub"><input type="checkbox" id="stOnlySale"> Solo en oferta</label>
+    <div class="phead">
+      <div><h1 class="page">Ofertas</h1><p class="lead" id="stStatus"></p></div>
+      <div class="toolbar" style="margin:0">
+        <button class="b" id="stRefresh">Revisar ahora</button>
+        <button class="b" id="stImport">Importar mi lista de deseados</button>
+        <button class="b primary" id="stAddBtn">+ Seguir un juego</button>
       </div>
+    </div>
+    <div class="kpis" id="stKpis"></div>
+    <div class="card" id="stAddCard" hidden>
       <div class="toolbar">
         <input id="stSearch" class="grow" placeholder="Agregar un juego: busca en la tienda de Steam">
         <button class="b" id="stSearchGo">Buscar</button>
       </div>
       <div id="stResults"></div>
-      <div id="stList"></div>
     </div>
-    <div class="grid">
+    <div class="split">
+      <div class="smain">
+        <div class="toolbar">
+          <div class="chips" id="stFilters"><button data-f="all">Todos</button><button data-f="sale" class="on">En oferta</button><button data-f="low">En mínimo</button><button data-f="target">Bajo mi objetivo</button></div>
+          <span class="grow"></span>
+          <select id="stSort" aria-label="Orden"><option value="discount">Mayor descuento</option><option value="low">Más cerca del mínimo</option><option value="price">Precio más bajo</option><option value="name">Nombre</option></select>
+        </div>
+        <div id="stList"></div>
+      </div>
+      <aside class="sside">
       <div class="card">
-        <h2>Alertas recientes</h2>
+        <div class="toolbar" style="margin:0 0 6px"><h2 class="grow" style="margin:0">Alertas</h2><button class="b" id="stMarkRead">Marcar leídas</button></div>
         <div id="stNotes"></div>
       </div>
       <div class="card">
@@ -358,6 +642,7 @@
         <p class="sub">Mínimo histórico más preciso con <a href="https://isthereanydeal.com/apps/my/" target="_blank">IsThereAnyDeal</a> (clave gratuita). Sin clave se usa el precio más bajo que DeckHub ha visto.</p>
         <form class="toolbar" id="stItadForm"><input type="password" id="stItad" class="grow" autocomplete="off"><button class="b">Guardar clave</button></form>
       </div>
+      </aside>
     </div>
   </section>
 
@@ -447,6 +732,16 @@
     <div class="toolbar"><span class="grow err" id="tokenErr"></span><button class="b" type="button" onclick="this.closest('dialog').close()">Cancelar</button><button class="b primary" value="ok">Entrar</button></div>
   </form>
 </dialog>
+<dialog id="askDlg" class="ask">
+  <form method="dialog">
+    <h3 id="askTitle"></h3>
+    <p id="askBody" class="sub" style="white-space: pre-line"></p>
+    <div class="toolbar" style="justify-content: flex-end; margin: 18px 0 0">
+      <button class="b" value="cancel">Cancelar</button>
+      <button id="askOk" class="b primary" value="ok">Aceptar</button>
+    </div>
+  </form>
+</dialog>
 <div id="toast"></div>
 
 <script>
@@ -491,7 +786,7 @@ function translateTree(root) {
 async function initI18n() {
   let info;
   try { info = await (await fetch("/api/i18n")).json(); } catch { return; }
-  $("langSel").innerHTML = `<option value="auto">Automático (idioma de Steam)</option>` +
+  $("langSel").innerHTML = `<option value="auto">Auto (Steam)</option>` +
     info.available.map(l => `<option value="${l.code}">${l.name}</option>`).join("");
   $("langSel").value = info.choice;
   LANG = info.lang; document.documentElement.lang = LANG;
@@ -543,13 +838,69 @@ async function api(path, body) {
   if (!r.ok || d.error) throw new Error(d.error || `HTTP ${r.status}`);
   return d.data;
 }
+// Confirmación con el diseño del panel (reemplaza confirm()). La primera línea es la
+// pregunta; el resto, la explicación. Lo que borra, quita o sobrescribe sale en rojo.
+const DANGER = /papelera|^¿(Quitar|Eliminar|Desinstalar|Restaurar|Cerrar)/;
+function ask(message) {
+  const [title, ...rest] = tr(message).split("\n");
+  const verb = (message.match(/^¿(\p{L}+)/u) || [])[1];
+  const danger = DANGER.test(message);
+  return new Promise(resolve => {
+    const d = $("askDlg");
+    $("askTitle").textContent = title;
+    $("askBody").textContent = rest.join("\n").trim();
+    $("askBody").hidden = !rest.join("").trim();
+    $("askOk").textContent = tr(verb ? verb[0].toUpperCase() + verb.slice(1) : "Aceptar");
+    $("askOk").className = "b " + (danger ? "danger-solid" : "primary");
+    d.onclose = () => resolve(d.returnValue === "ok");
+    d.returnValue = "";
+    d.showModal();
+  });
+}
 const act = async (fn, okMsg) => { try { const r = await fn(); if (okMsg) toast(okMsg); return r; } catch (e) { toast("Error: " + e.message); throw e; } };
 
 // --- Pestañas -----------------------------------------------------------------
 let tab = "summary";
 const loaders = {};
+// Íconos del menú (trazo, 24×24): los mismos de la propuesta de diseño.
+const NAV_ICONS = {
+  summary: "M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z",
+  games: "M6 12h4M8 10v4M15 11h.01M18 13h.01M7 6h10a5 5 0 0 1 5 5v2a5 5 0 0 1-9 3h-2a5 5 0 0 1-9-3v-2a5 5 0 0 1 5-5z",
+  playtime: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2",
+  store: "M20 12l-8 8-9-9V4h7zM7.5 7.5h.01",
+  custom: "M12 3a9 9 0 1 0 0 18c1 0 1.5-.7 1.5-1.5s-.6-1.2-.6-2c0-.9.7-1.5 1.6-1.5H17a4 4 0 0 0 4-4c0-5-4-9-9-9zM7.5 11.5h.01M10 7.5h.01M14.5 7.5h.01",
+  emulators: "M9 3v2M15 3v2M9 19v2M15 19v2M3 9h2M3 15h2M19 9h2M19 15h2M6 5h12v14H6zM9 9h6v6H9z",
+  saves: "M5 3h11l3 3v15H5zM8 3v5h7V3M8 14h8v7H8z",
+  cheats: "M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z",
+  drives: "M4 6h16v5H4zM4 13h16v5H4zM8 8.5h.01M8 15.5h.01",
+  files: "M3 6a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
+  packages: "M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12L4 7.5",
+  jobs: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
+  settings: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM4 12h2M18 12h2M12 4v2M12 18v2M6.3 6.3l1.4 1.4M16.3 16.3l1.4 1.4M6.3 17.7l1.4-1.4M16.3 7.7l1.4-1.4",
+  more: "M5 12h.01M12 12h.01M19 12h.01",
+};
+const navSvg = d => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"></path></svg>`;
+document.querySelectorAll("#tabs button").forEach(b => b.insertAdjacentHTML("afterbegin", navSvg(NAV_ICONS[b.dataset.tab ?? "more"])));
+// Contador junto a una sección del menú (alertas sin leer, emuladores con avisos…).
+function setNavCount(tabName, n) {
+  const b = document.querySelector(`#tabs button[data-tab="${tabName}"]`); if (!b) return;
+  let c = b.querySelector(".count");
+  if (!n) { c?.remove(); return; }
+  if (!c) { c = document.createElement("span"); c.className = "count"; b.append(c); }
+  c.textContent = n;
+}
+const goTab = name => document.querySelector(`#tabs button[data-tab="${name}"]`)?.click();
+$("globalSearch").onkeydown = e => {
+  if (e.key !== "Enter") return;
+  goTab("games");
+  setTimeout(() => { $("gameFilter").value = $("globalSearch").value; $("gameFilter").dispatchEvent(new Event("input")); }, 50);
+};
+$("bellBtn").onclick = () => goTab("store");
+document.addEventListener("click", e => { if (!e.target.closest("#tabs")) $("tabs").classList.remove("more-open"); });
 $("tabs").onclick = e => {
   const b = e.target.closest("button"); if (!b) return;
+  if (b.hasAttribute("data-more")) { $("tabs").classList.toggle("more-open"); return; }
+  $("tabs").classList.remove("more-open");
   tab = b.dataset.tab;
   document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x === b));
   document.querySelectorAll("section.tab").forEach(s => s.classList.toggle("on", s.id === "tab-" + tab));
@@ -739,7 +1090,7 @@ $("fCopy").onclick = () => { clipboard = {paths: selected(), move: false}; rende
 $("fCut").onclick = () => { clipboard = {paths: selected(), move: true}; renderClip(); toast("Ve a la carpeta de destino y pulsa Pegar aquí"); };
 $("fTrash").onclick = async () => {
   const s = selected();
-  if (!confirm(`¿Enviar ${s.length} elemento(s) a la papelera?\n\n${s.map(p => p.split("/").pop()).slice(0, 8).join("\n")}`)) return;
+  if (!await ask(`¿Enviar ${s.length} elemento(s) a la papelera?\n\n${s.map(p => p.split("/").pop()).slice(0, 8).join("\n")}`)) return;
   await act(() => api("/api/files/trash", {paths: s}), "Enviado a la papelera"); loadDir(cwd);
 };
 
@@ -801,7 +1152,7 @@ async function loadSteam() {
   if (pend && tab === "games") steamTimer = setTimeout(() => { loadSteam(); loadLibrary(); }, 2500);
 }
 async function loadGames(refresh) {
-  $("libGrid").innerHTML = `<p class="sub">Cargando biblioteca…</p>`;
+  $("libGrid").innerHTML = Array.from({length: 12}, () => `<div class="gcard"><span class="cover skel"></span><span class="skel" style="height:12px;width:70%"></span></div>`).join("");
   try { games = await api("/api/roms" + (refresh ? "?refresh=1" : "")); } catch (e) { $("libGrid").innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
   const cur = $("gameConsole").value;
   $("gameConsole").innerHTML = `<option value="">Todas las consolas</option>` + games.consoles.map(c => `<option value="${esc(c.console)}">${esc(c.name)} (${c.count})</option>`).join("");
@@ -810,12 +1161,30 @@ async function loadGames(refresh) {
 }
 async function loadLibrary() {
   try { lib = await api("/api/library"); } catch (e) { $("libGrid").innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
-  const st = lib.items.filter(i => i.source === "steam");
-  $("gameSummary").innerHTML = `<span class="pill">Steam: ${st.filter(i => i.installed).length} instalados de ${st.length}</span>` +
-    (games?.consoles ?? []).map(c => `<span class="pill">${esc(c.name)}: ${c.count} · ${gb(c.size)}</span>`).join("") +
+  const base = lib.items.filter(i => !i.kind || i.kind === "base");
+  const n = src => base.filter(i => !src || i.source === src).length;
+  $("cntAll").textContent = n(""); $("cntSteam").textContent = n("steam"); $("cntRom").textContent = n("rom"); $("cntOther").textContent = n("shortcut");
+  $("gameSummary").innerHTML = (games?.consoles ?? []).map(c => `<span class="pill">${esc(c.name)}: ${c.count} · ${gb(c.size)}</span>`).join("") +
     (lib.updated ? "" : `<span class="sub">Los juegos de Steam aparecen cuando el plugin de Decky envía la biblioteca (unos segundos después de abrir Steam).</span>`);
+  // El plugin envía la biblioteca cada 2 minutos: sin noticias en 10, algo pasa.
+  $("pluginBanner").hidden = !!lib.updated && Date.now() / 1000 - lib.updated < 600;
+  renderRecent();
   renderGames();
 }
+// «Continuar jugando»: los 3 juegos jugados más recientemente, con su imagen de fondo.
+function renderRecent() {
+  const recent = lib.items.filter(i => i.appid && i.installed && i.last_played).sort((a, b) => b.last_played - a.last_played).slice(0, 3);
+  $("recentWrap").hidden = !recent.length;
+  $("recentRow").innerHTML = recent.map(i => {
+    const cdn = i.source === "steam" ? `, url('https://cdn.cloudflare.steamstatic.com/steam/apps/${i.appid}/library_hero.jpg')` : "";
+    return `<div class="rcard" role="button" tabindex="0" data-key="${esc(i.key)}" style="background-image: url('/api/custom/art/image?appid=${i.appid}&kind=hero')${cdn}">
+      <button class="play" data-run="${i.appid}" data-title="${esc(i.title)}">▶ Jugar</button>
+      <span class="meta">${i.minutes ? hm2(i.minutes) + " · " : ""}${date(i.last_played)}${i.console_name ? " · " + esc(i.console_name) : ""}</span>
+      <span class="t">${esc(i.title)}</span></div>`;
+  }).join("");
+}
+$("recentRow").onclick = e => openGameFromEvent(e);
+$("recentRow").onkeydown = e => { if (e.key === "Enter" && e.target.dataset.key) openGame(e.target.dataset.key); };
 const steamable = g => (!g.kind || g.kind === "base") && steam.supported[g.console];
 const romOf = it => games?.games.find(g => g.path === it.path);
 function visibleItems() {
@@ -852,10 +1221,13 @@ function renderGames() {
   if (libView === "grid") {
     $("libGrid").innerHTML = shown.map(i => {
       const deck = DECK_BADGE[i.deck_compat];
-      return `<button class="gcard ${i.installed ? "" : "dim"}" data-key="${esc(i.key)}" title="${esc(i.title)}">
-        <span class="cover">${coverImg(i)}${deck && i.source === "steam" ? `<span class="deck ${deck[1]}" title="Steam Deck: ${deck[0]}">${deck[0]}</span>` : ""}</span>
+      const inSteam = i.source !== "rom" || steam.shortcuts[i.path]?.status === "added";
+      const canPlay = i.appid && i.installed;
+      return `<div class="gcard ${i.installed ? "" : "dim"}" role="button" tabindex="0" data-key="${esc(i.key)}" title="${esc(i.title)}">
+        <span class="cover">${coverImg(i)}${deck && i.source === "steam" ? `<span class="deck ${deck[1]}" title="Steam Deck: ${deck[0]}">${deck[0]}</span>` : ""}
+          ${canPlay ? `<span class="play"><span data-run="${i.appid}" data-title="${esc(i.title)}">▶ Jugar</span></span>` : ""}</span>
         <span class="gmeta"><b>${esc(i.title)}</b><span>${originTag(i)} ${i.minutes ? `<span class="sub">${hm2(i.minutes)}</span>` : ""}
-        ${i.source === "rom" && steam.shortcuts[i.path]?.status === "added" ? `<span class="tag ok">en Steam</span>` : ""}${i.has_updates ? `<span class="tag update">+ act/DLC</span>` : ""}</span></span></button>`;
+        ${!inSteam ? `<span class="src pending">sin agregar a Steam</span>` : ""}${i.has_updates ? `<span class="tag update">+ act/DLC</span>` : ""}</span></span></div>`;
     }).join("") || `<p class="sub">Sin resultados.</p>`;
   } else {
     $("gameList").innerHTML = shown.map(i => `<tr>
@@ -883,23 +1255,27 @@ $("libView").onclick = e => { const b = e.target.closest("[data-view]"); if (!b)
 $("gameFilter").oninput = () => { libLimit = 120; renderGames(); };
 $("libMore").onclick = () => { libLimit += 120; renderGames(); };
 $("gameRefresh").onclick = () => loadGames(true);
-$("steamAddAll").onclick = () => {
+$("steamAddAll").onclick = async () => {
   const paths = visibleItems().filter(i => i.source === "rom" && romOf(i) && steamable(romOf(i)) && !["added", "pending_add"].includes(steam.shortcuts[i.path]?.status)).map(i => i.path);
-  if (paths.length > 1 && !confirm(`¿Agregar ${paths.length} juegos a tu biblioteca de Steam?`)) return;
+  if (paths.length > 1 && !await ask(`¿Agregar ${paths.length} juegos a tu biblioteca de Steam?`)) return;
   steamAdd(paths);
 };
 const openGameFromEvent = e => {
   const add = e.target.closest("[data-steam-add]"); if (add) { e.stopPropagation(); return steamAdd([add.dataset.steamAdd]); }
+  const run = e.target.closest("[data-run]");
+  if (run) { e.stopPropagation(); return act(() => api("/api/library/action", {action: "run", appid: +run.dataset.run}), `Abriendo ${run.dataset.title} en el Deck…`); }
   const b = e.target.closest("[data-key]"); if (b) openGame(b.dataset.key);
 };
 $("libGrid").onclick = openGameFromEvent;
+$("libGrid").onkeydown = e => { if (e.key === "Enter" && e.target.dataset.key) openGame(e.target.dataset.key); };
 $("gameList").onclick = openGameFromEvent;
 async function loadDownloads() {
   let d; try { d = await api("/api/steam/downloads"); } catch { return; }
   const items = d.items.filter(i => !i.completed);
   $("dlCard").hidden = !items.length;
   $("dlAll").hidden = !d.pending;
-  $("dlAll").textContent = `Descargar todo (${d.pending} · ${gb(d.bytes)})`;
+  $("dlTitle").textContent = d.pending ? `${d.pending} actualizaciones de Steam esperando` : `${items.length} descargas de Steam en curso`;
+  $("dlSub").textContent = `${items.slice(0, 2).map(i => i.name).join(", ")}${items.length > 2 ? ` y ${items.length - 2} más` : ""} · ${gb(d.bytes)}`;
   $("dlList").innerHTML = `<table><tbody>${items.map(i => `<tr><td class="name">${esc(i.name)}</td>
     <td class="muted">${i.active ? "descargando" : i.paused ? "en pausa" : i.queued ? "en cola" : i.deferred_time ? "programada " + dt(i.deferred_time) : "en espera"}</td>
     <td class="num">${gb(i.bytes)}</td></tr>`).join("")}</tbody></table>`;
@@ -936,7 +1312,7 @@ function renderGameHead() {
     gd.hidden ? `<span class="tag">Oculto</span>` : "",
   ].join(" ");
   const acts = [];
-  if (gd.appid && gd.installed) acts.push(`<button class="b primary" data-gd="run">▶ Jugar</button>`);
+  if (gd.appid && gd.installed) acts.push(`<button class="b primary big" data-gd="run">▶ Jugar en el Deck</button>`);
   if (gd.source === "rom" && !gd.appid) acts.push(`<button class="b primary" data-gd="add">Agregar a Steam</button>`);
   if (gd.source === "rom") acts.push(`<button class="b" data-gd="folder">Ver en Archivos</button>`);
   if (gd.install_dir && /^\/(home|run\/media)\//.test(gd.install_dir)) acts.push(`<button class="b" data-gd="folder">Carpeta del juego</button>`);
@@ -973,7 +1349,24 @@ function showGameTab(t) {
         .map(([k, u]) => `<tr><td><span class="tag ${k === "DLC" ? "dlc" : "update"}">${k}</span></td><td class="name">${esc(u.title || u.file || u.path || "")}</td><td class="muted">${esc(u.version || "")}</td><td class="num">${gb(u.size)}</td></tr>`).join("")}</tbody></table>`
         + (r.stale_updates?.length ? `<p class="sub">${r.stale_updates.length} actualización(es) antigua(s) sobran: solo cuenta la más nueva.</p>` : "");
     }
-    body.innerHTML = rows.map(([k, v]) => row(k, v)).join("") + extra;
+    // Tarjetas con lo más consultado; el resto en filas debajo.
+    const stat = (label, value, sub) => `<div class="stat"><span class="sub">${label}</span><b>${value}</b>${sub ? `<span class="sub">${sub}</span>` : ""}</div>`;
+    const cards = gd.source === "rom"
+      ? [stat("Tiempo jugado", hm2(gd.minutes)), stat("Última vez", gd.last_played ? date(gd.last_played) : "nunca"),
+         stat("Tamaño", gb(gd.rom.size)), stat("Consola", esc(gd.rom.console_name))]
+      : [stat("Tiempo jugado", hm2(gd.minutes), gd.minutes_2w ? `${hm2(gd.minutes_2w)} las últimas 2 semanas` : ""),
+         stat("Última vez", gd.last_played ? date(gd.last_played) : "nunca"),
+         stat("Tamaño", gd.size ? gb(gd.size) : "—", gd.install_dir?.startsWith("/run/media") ? "Tarjeta microSD" : ""),
+         stat("ProtonDB", esc(gd.protondb?.tier || "—"), gd.protondb ? `${gd.protondb.total ?? 0} reportes` : "")];
+    const thumbs = KINDS.map(([k, label]) => {
+      const c = gd.art?.[k];
+      return `<button class="thumb ${k}" data-dt="art" title="${label}">${c ? `<img src="${preview(c.path)}&v=${c.mtime}" alt="">` : `<span class="ph">—</span>`}
+        <span>${label}</span><span class="sub">${c ? (c.custom ? "personalizada" : "original") : "sin imagen"}</span></button>`;
+    }).join("");
+    const aside = gd.appid ? `<section class="dside"><div class="toolbar" style="margin:0 0 8px"><h3 style="margin:0" class="grow">Carátulas</h3><button class="b" data-dt="art">Editar</button></div>
+      <div class="thumbs">${thumbs}</div></section><section class="dside" id="gdPrice" hidden></section>` : "";
+    body.innerHTML = `<div class="dgrid"><div class="dmain"><div class="stats">${cards.join("")}</div>${rows.map(([k, v]) => row(k, v)).join("")}${extra}</div>${aside ? `<aside>${aside}</aside>` : ""}</div>`;
+    if (gd.source === "steam") gamePrice(gd.appid);
   } else if (t === "art") {
     if (!gd.appid) { body.innerHTML = needsSteam; return; }
     artEditor(body, {appid: gd.appid, title: gd.title, shortcut: gd.source !== "steam"});
@@ -1007,7 +1400,20 @@ function showGameTab(t) {
     body.innerHTML = o.join("") || `<p class="sub">Sin opciones para este juego.</p>`;
   }
 }
+// Precio en la tienda si el juego está en seguimiento (pestaña Ofertas).
+async function gamePrice(appid) {
+  let s; try { s = store ?? await api("/api/store"); } catch { return; }
+  const it = s.items.find(i => i.appid === appid), box = $("gdPrice");
+  if (!it || !box || !it.price?.purchasable) return;
+  const p = it.price;
+  box.hidden = false;
+  box.innerHTML = `<h3 style="margin:0 0 8px">En la tienda</h3>
+    <div style="display:flex;align-items:baseline;gap:8px">${p.discount ? `<span class="disc">-${p.discount}%</span>` : ""}<b style="font-size:22px">${esc(p.formatted)}</b></div>
+    <p class="sub" style="margin:4px 0 10px">Mínimo histórico: ${it.low ? money(it.low, s.currency) : "—"}</p>
+    <button class="b" data-gd="deals">Ver en Ofertas</button>`;
+}
 $("gdTabs").onclick = e => { const b = e.target.closest("[data-dt]"); if (b && gd) showGameTab(b.dataset.dt); };
+$("gdBody").addEventListener("click", e => { const b = e.target.closest("[data-dt]"); if (b && gd) showGameTab(b.dataset.dt); });
 $("gdClose").onclick = () => $("gameDlg").close();
 $("gameDlg").addEventListener("click", e => { if (e.target === $("gameDlg")) $("gameDlg").close(); });
 const steamDo = (action, value, msg) => act(() => api("/api/library/action", {action, appid: gd.appid, value}), msg ?? "Se aplica en Steam en unos segundos");
@@ -1024,44 +1430,65 @@ $("gameDlg").addEventListener("click", async e => {
   else if (a === "sc-launch") { await steamDo("shortcut_launch_options", $("gdLaunch").value.trim(), "Opciones guardadas en Steam"); }
   else if (a === "compat") { await steamDo("compat_tool", $("gdCompat").value, "Compatibilidad guardada en Steam"); gd.compat_tool = $("gdCompat").value; }
   else if (a === "add") { await steamAdd([gd.rom.path]); setTimeout(() => openGame(gd.key), 6000); }
-  else if (a === "remove") { if (!confirm(`¿Quitar «${gd.title}» de Steam? El archivo del juego no se toca.`)) return;
+  else if (a === "remove") { if (!await ask(`¿Quitar «${gd.title}» de Steam? El archivo del juego no se toca.`)) return;
     await act(() => api("/api/shortcuts/remove", {paths: [gd.rom.path]}), "Se quitará de Steam"); loadSteam(); setTimeout(() => openGame(gd.key), 6000); }
   else if (a === "folder") { $("gameDlg").close(); openFiles((gd.rom?.path || gd.install_dir + "/x").replace(/\/[^/]+$/, "")); }
-  else if (a === "saves" || a === "cheats") { $("gameDlg").close(); document.querySelector(`#tabs button[data-tab="${a}"]`).click(); }
+  else if (a === "saves" || a === "cheats") { $("gameDlg").close(); goTab(a); }
+  else if (a === "deals") { $("gameDlg").close(); goTab("store"); }
 });
 
 // --- Emuladores ---------------------------------------------------------------
 async function loadEmulators() {
   let d;
-  try { d = await api("/api/emulators"); } catch (e) { $("emuList").innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
+  let sv = null;
+  try { [d, sv] = await Promise.all([api("/api/emulators"), api("/api/saves").catch(() => null)]); } catch (e) { $("emuList").innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
   $("emuStale").innerHTML = d.discontinued.map(s =>
-    `<div class="card"><strong>${esc(s.name)}</strong> <span class="sub">· ${esc(s.reason)}</span>
-     <button class="b danger" style="float:right" data-uninstall="${esc(s.id)}" data-name="${esc(s.name)}">Desinstalar</button></div>`).join("");
-  // Primero los que tienen juegos o están instalados.
-  const list = [...d.emulators].sort((a, b) => (b.games > 0) - (a.games > 0) || b.installed - a.installed);
-  $("emuList").innerHTML = list.map(e => {
-    const state = !e.installed ? `<span class="pill">no instalado</span>`
-      : e.configured === false || !e.access ? `<span class="pill bad">falta configurar</span>`
-      : `<span class="pill ok">listo</span>`;
-    const actions = !e.installed
-      ? `<button class="b primary" data-emu-install="${esc(e.id)}">Instalar${e.auto_config ? " y configurar" : ""}</button>`
-      : `<button class="b" data-emu-config="${esc(e.id)}">${e.configured && e.access ? "Reconfigurar" : "Configurar"}</button>`;
-    return `<div class="card">
-      <h2>${esc(e.console_names.slice(0, 4).join(" · "))}${e.console_names.length > 4 ? " …" : ""}</h2>
-      <div class="toolbar"><span class="big" style="font-size:20px">${esc(e.name)}</span><span class="grow"></span>${state}</div>
-      ${row("Juegos detectados", e.games)}
-      ${e.installed ? row("Versión", `${esc(e.version)} · ${gb(e.size)}`) + row("Acceso a la microSD", e.access ? "sí (solo lectura)" : "no") : ""}
-      ${e.rom_dirs ? row("Carpetas de juegos", e.rom_dirs.map(esc).join("<br>") || "—") : ""}
-      ${e.bios !== undefined ? row("BIOS", e.bios_file ? esc(e.bios_file) : "no encontrada") : ""}
-      ${e.keys !== undefined ? row("Llaves", e.keys ? "sí" : "no") + row("Firmware", e.firmware
-        ? `sí · ${e.firmware_info.files} archivos · ${dt(e.firmware_info.installed)}` : "no") : ""}
-      ${e.installed && !e.auto_config ? `<p class="sub">Solo se da acceso a la microSD; la carpeta de juegos se elige dentro del emulador.</p>` : ""}
-      ${e.warnings.map(w => `<p class="err sub" style="margin:6px 0">⚠ ${esc(w)}</p>`).join("")}
-      <div class="toolbar" style="margin:8px 0 0">${actions}
-        ${e.id === "dev.eden_emu.eden" && e.installed ? `<button class="b" data-fw-upload>Instalar firmware (.zip)</button>
-          <button class="b" data-fw-path>Desde una ruta del Deck</button><button class="b" data-keys>Actualizar llaves</button>` : ""}</div>
-      <div id="fwProgress-${esc(e.id).replace(/\W/g, "")}"></div></div>`;
-  }).join("");
+    `<div class="banner warn"><span style="color:var(--warn);font-weight:800">!</span><div style="flex:1"><b>${esc(s.name)}</b><span class="sub">${esc(s.reason)}</span></div>
+     <button class="b danger" data-uninstall="${esc(s.id)}" data-name="${esc(s.name)}">Desinstalar</button></div>`).join("");
+  // Partidas por emulador (para la tarjeta), según el id del Flatpak.
+  const SAVE_KEY = {"net.pcsx2.PCSX2": "pcsx2", "dev.eden_emu.eden": "eden", "org.yuzu_emu.yuzu": "yuzu"};
+  const savesOf = id => sv?.emulators?.[SAVE_KEY[id]]?.saves?.length;
+  const icon = (e, size) => `<img class="eicon s${size}" src="/api/emulators/icon?id=${encodeURIComponent(e.id)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'eicon s${size} ph',textContent:'${esc(e.name[0])}'}))">`;
+  const needs = e => e.installed && (e.configured === false || !e.access || e.warnings.length || (e.firmware === false) || (e.keys === false));
+  const inst = d.emulators.filter(e => e.installed), attention = inst.filter(needs), ready = inst.filter(e => !needs(e));
+  const more = d.emulators.filter(e => !e.installed).sort((a, b) => b.games - a.games || b.recommended - a.recommended);
+  const games = inst.reduce((n, e) => n + e.games, 0);
+  $("emuLead").textContent = `${ready.length} listos · ${attention.length} necesitan atención · ${games} juegos detectados`;
+  setNavCount("emulators", attention.length);
+  // Lista de comprobación de lo que necesita cada emulador para funcionar.
+  const checks = e => [
+    ["Acceso a la microSD", e.access],
+    e.keys !== undefined && ["Llaves (prod.keys)", e.keys],
+    e.firmware !== undefined && ["Firmware", e.firmware],
+    e.bios !== undefined && ["BIOS", !!e.bios_file],
+    e.rom_dirs !== undefined && ["Carpeta de juegos", !!e.rom_dirs?.length],
+  ].filter(Boolean);
+  const attentionCard = e => `<section class="emu attention">
+    ${icon(e, 88)}
+    <div class="einfo"><div class="toolbar" style="margin:0"><span class="ename">${esc(e.name)}</span><span class="pill warn">${e.firmware === false ? "Falta el firmware" : "Necesita atención"}</span></div>
+      <span class="sub">${esc(e.console_names.join(" · "))} · ${e.games} juegos detectados${e.version ? " · versión " + esc(e.version) : ""}</span>
+      <div class="checks">${checks(e).map(([l, ok]) => `<span class="${ok ? "ok" : "no"}">${ok ? "✓" : "✕"} ${l}</span>`).join("")}</div>
+      ${e.warnings.map(w => `<p class="sub" style="color:var(--warn);margin:6px 0 0">⚠ ${esc(w)}</p>`).join("")}</div>
+    <div class="eacts">
+      ${e.id === "dev.eden_emu.eden" ? `<button class="b primary" data-fw-upload>Instalar firmware (.zip)</button><button class="b" data-fw-path>Desde una ruta del Deck</button><button class="b" data-keys>Actualizar llaves</button>`
+        : `<button class="b primary" data-emu-config="${esc(e.id)}">Configurar</button>`}
+    </div>
+    <div class="eprog" id="fwProgress-${esc(e.id).replace(/\W/g, "")}"></div></section>`;
+  const readyCard = e => `<article class="emu">
+    <div class="toolbar" style="margin:0">${icon(e, 64)}<div style="flex:1;min-width:0"><span class="ename">${esc(e.name)}</span><span class="sub" style="display:block">${esc(e.console_names.slice(0, 3).join(" · "))}</span></div><span class="pill ok">Listo</span></div>
+    <div class="estats"><div><span class="sub">Juegos</span><b>${e.games}</b></div><div><span class="sub">Partidas</span><b>${savesOf(e.id) ?? "—"}</b></div></div>
+    <div class="toolbar" style="margin:0">
+      ${e.games ? `<button class="b" data-emu-games="${esc(e.consoles[0])}">Ver juegos</button>` : ""}
+      <button class="b" data-emu-config="${esc(e.id)}">Reconfigurar</button>
+      ${e.id === "dev.eden_emu.eden" ? `<button class="b" data-fw-upload>Firmware</button><button class="b" data-keys>Llaves</button>` : ""}
+      <span class="grow"></span><button class="b" data-uninstall="${esc(e.id)}" data-name="${esc(e.name)}" title="Desinstalar">Desinstalar</button>
+    </div>
+    <div class="eprog" id="fwProgress-${esc(e.id).replace(/\W/g, "")}"></div></article>`;
+  $("emuList").innerHTML = attention.map(attentionCard).join("")
+    + (ready.length ? `<h2 class="sect">Instalados</h2><div class="emugrid">${ready.map(readyCard).join("")}</div>` : "")
+    + `<h2 class="sect">Más consolas</h2><div class="emumore">${more.map(e => `<div class="emu small">${icon(e, 44)}
+        <div style="flex:1;min-width:0"><b>${esc(e.name)}</b><span class="sub" style="display:block">${esc(e.console_names.slice(0, 2).join(" · "))}${e.games ? ` · ${e.games} juegos` : ""}</span></div>
+        <button class="b primary" data-emu-install="${esc(e.id)}">Instalar</button></div>`).join("")}</div>`;
 }
 // Sube un archivo con progreso; reintenta tras pedir el token si hace falta.
 function uploadTo(url, form, progressEl) {
@@ -1096,13 +1523,13 @@ $("emuList").addEventListener("click", async e => {
   try {
     if (b.dataset.fwUpload !== undefined) {
       const [f] = await pickFiles(".zip", false); if (!f) return;
-      if (!confirm(`¿Instalar el firmware de «${f.name}» (${gb(f.size)}) en Eden?\n\n${FW_NOTE}`)) return;
+      if (!await ask(`¿Instalar el firmware de «${f.name}» (${gb(f.size)}) en Eden?\n\n${FW_NOTE}`)) return;
       const fd = new FormData(); fd.append("file", f, f.name);
       await uploadTo("/api/emulators/eden/firmware", fd, prog);
       toast("Firmware subido · instalando (mira Tareas)"); pollJobs();
     } else if (b.dataset.fwPath !== undefined) {
       const path = prompt("Ruta en el Deck del .zip o de la carpeta con los .nca\n(p. ej. /run/media/deck/RomsSwitch/firmware.zip)"); if (!path) return;
-      if (!confirm(`¿Instalar el firmware de ${path} en Eden?\n\n${FW_NOTE}`)) return;
+      if (!await ask(`¿Instalar el firmware de ${path} en Eden?\n\n${FW_NOTE}`)) return;
       await act(() => api("/api/emulators/eden/firmware", {path}), "Instalando firmware · mira Tareas"); pollJobs();
     } else {
       const files = await pickFiles(".keys", true); if (!files.length) return;
@@ -1116,6 +1543,17 @@ $("emuList").addEventListener("click", async e => {
 
 $("emuList").onclick = async e => {
   const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.emuGames) {
+    goTab("games");
+    setTimeout(() => { $("libSource").querySelector('[data-src="rom"]').click(); $("gameConsole").value = b.dataset.emuGames; renderGames(); }, 100);
+    return;
+  }
+  if (b.dataset.uninstall) {
+    if (!await ask(`¿Desinstalar ${b.dataset.name}?
+Sus datos (~/.var/app) se conservan.`)) return;
+    await act(() => api("/api/packages/uninstall", {id: b.dataset.uninstall}), "Desinstalando · mira la pestaña Tareas"); pollJobs(); return;
+  }
+  if (!b.dataset.emuInstall && !b.dataset.emuConfig) return;
   b.disabled = true;
   try {
     if (b.dataset.emuInstall) await act(() => api("/api/emulators/install", {id: b.dataset.emuInstall}), "Instalando · mira la pestaña Tareas");
@@ -1125,47 +1563,130 @@ $("emuList").onclick = async e => {
 };
 $("emuStale").onclick = async e => {
   const b = e.target.closest("button[data-uninstall]"); if (!b) return;
-  if (!confirm(`¿Desinstalar ${b.dataset.name}?\nSus datos (~/.var/app) se conservan.`)) return;
+  if (!await ask(`¿Desinstalar ${b.dataset.name}?\nSus datos (~/.var/app) se conservan.`)) return;
   await act(() => api("/api/packages/uninstall", {id: b.dataset.uninstall}), "Desinstalando · mira la pestaña Tareas"); pollJobs();
 };
+$("emuRescan").onclick = async () => { await api("/api/roms?refresh=1"); games = null; loadEmulators(); };
 loaders.emulators = loadEmulators;
 
 // --- Partidas guardadas -------------------------------------------------------
 const dt = t => new Date(t * 1000).toLocaleString(undefined, {dateStyle: "short", timeStyle: "short"});
-async function loadSaves() {
-  let d;
-  try { d = await api("/api/saves"); } catch (e) { $("saveList").innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
-  $("saveMigrate").innerHTML = d.can_migrate ? `<div class="card"><strong>Tienes partidas de yuzu.</strong>
-    <span class="sub">Cópialas a Eden para seguir donde ibas (antes se respalda lo que tenga Eden).</span>
-    <button class="b primary" style="float:right" id="doMigrate">Migrar a Eden</button></div>` : "";
-  $("saveList").innerHTML = Object.entries(d.emulators).map(([key, e]) => `<div class="card">
-    <div class="toolbar"><h2 style="margin:0">${esc(e.name)}</h2><span class="sub">${e.saves.length} · ${gb(e.total)}</span>
-      ${e.running ? `<span class="pill bad">abierto</span>` : ""}<span class="grow"></span>
-      ${e.saves.length ? `<button class="b" data-backup="${key}">Respaldar todo</button>` : ""}</div>
-    ${e.saves.length ? `<table>${e.saves.map(s => `<tr><td class="name">${esc(s.title)}${s.title_id && s.title !== s.title_id ? ` <span class="sub">${esc(s.title_id)}</span>` : ""}
-      ${s.kind === "savestate" ? ` <span class="tag">estado guardado</span>` : s.kind === "memcard" ? ` <span class="tag">memory card</span>` : ""}</td>
-      <td class="num muted">${gb(s.size)}</td><td class="num muted">${dt(s.mtime)}</td>
-      <td class="num">${key !== "pcsx2" ? `<button class="b" data-backup="${key}" data-only="${esc(s.id)}">Respaldar</button>` : ""}</td></tr>`).join("")}</table>`
-      : `<p class="sub">Sin partidas todavía.</p>`}</div>`).join("");
-  $("bkDaily").checked = d.settings.daily; $("bkKeep").value = d.settings.keep;
-  $("bkList").innerHTML = d.backups.length ? `<table>${d.backups.map(b => `<tr><td class="name">${esc(b.name)}</td>
-    <td><span class="tag">${esc(b.emulator)}</span></td><td class="num muted">${gb(b.size)}</td><td class="num muted">${dt(b.mtime)}</td>
-    <td class="num"><a class="b" href="/api/files/download?path=${encodeURIComponent(b.path)}" title="Descargar">⬇</a>
-    <button class="b" data-restore="${esc(b.name)}" data-emu="${esc(b.emulator)}">Restaurar</button></td></tr>`).join("")}</table>`
-    : `<p class="sub">Aún no hay respaldos.</p>`;
+let saves = null, saveEmu = null;
+const SAVE_APPS = {pcsx2: "net.pcsx2.PCSX2", eden: "dev.eden_emu.eden", yuzu: "org.yuzu_emu.yuzu"};
+const BK_TAGS = {auto: "Automático", manual: "Manual", "antes-de-restaurar": "Antes de restaurar", "antes-de-eliminar": "Antes de eliminar", "antes-de-migrar": "Antes de migrar"};
+// «20261029-030000-auto-0100F2C0115B6000.zip» → fecha y tipo legibles.
+function bkInfo(name) {
+  const m = name.match(/^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})-(.+)\.zip$/);
+  if (!m) return {when: name, tag: ""};
+  const d = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
+  // Lo que sigue a la fecha es el tipo y, si es de una sola partida, su nombre.
+  const tag = Object.keys(BK_TAGS).find(k => m[7] === k || m[7].startsWith(k + "-")) || m[7];
+  return {when: d.toLocaleString(undefined, {dateStyle: "medium", timeStyle: "short"}), tag: BK_TAGS[tag] || tag, time: d.getTime() / 1000};
 }
+async function loadSaves() {
+  try { saves = await api("/api/saves"); } catch (e) { $("saveList").innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
+  const emus = Object.keys(saves.emulators);
+  if (!emus.includes(saveEmu)) saveEmu = emus.find(k => saves.emulators[k].saves.length) || emus[0];
+  const last = saves.backups.filter(b => b.auto).sort((a, b) => b.mtime - a.mtime)[0];
+  $("saveLead").textContent = (last ? `Último respaldo automático: ${dt(last.mtime)}` : "Aún sin respaldos automáticos") + " · se guardan en ~/DeckHub/backups";
+  $("bkDaily").checked = saves.settings.daily;
+  $("bkKeep").value = String([5, 10, 20, 30].reduce((a, b) => Math.abs(b - saves.settings.keep) < Math.abs(a - saves.settings.keep) ? b : a));
+  $("saveMigrate").innerHTML = saves.can_migrate ? `<div class="banner info"><div style="flex:1"><b>Tienes partidas de yuzu.</b>
+    <span class="sub">Cópialas a Eden para seguir donde ibas (antes se respalda lo que tenga Eden).</span></div>
+    <button class="b primary" id="doMigrate">Migrar a Eden</button></div>` : "";
+  $("saveTabs").innerHTML = emus.map(k => { const e = saves.emulators[k];
+    return `<button role="tab" data-emu="${k}" class="${k === saveEmu ? "on" : ""}" aria-selected="${k === saveEmu}">
+      <img class="eicon s24" src="/api/emulators/icon?id=${SAVE_APPS[k]}" alt="" onerror="this.remove()">${esc(e.name)}
+      <span class="cnt">${e.saves.length}</span></button>`; }).join("");
+  renderSaves();
+  // Espacio: lo que ocupan los respaldos, por emulador.
+  const total = saves.backups.reduce((n, b) => n + b.size, 0);
+  const COLORS = ["var(--link)", "var(--ok)", "var(--warn)"];
+  const per = emus.map((k, i) => ({k, name: saves.emulators[k].name, size: saves.backups.filter(b => b.emulator === k).reduce((n, b) => n + b.size, 0), color: COLORS[i % 3]}));
+  $("bkSpace").innerHTML = `<div style="font-size:24px;font-weight:800">${gb(total)} <span class="sub" style="font-size:14px;font-weight:500">en ${saves.backups.length} respaldos</span></div>
+    <div class="bar">${per.map(p => `<span style="width:${total ? p.size * 100 / total : 0}%;background:${p.color}"></span>`).join("")}</div>
+    <div class="legend">${per.map(p => `<span><i style="background:${p.color}"></i>${esc(p.name)} · ${gb(p.size)}</span>`).join("")}</div>`;
+}
+function renderSaves() {
+  const e = saves.emulators[saveEmu];
+  if (!e) { $("saveList").innerHTML = `<div class="empty"><b>No hay emuladores con partidas</b>Instala y configura uno en Emuladores.</div>`; return; }
+  $("saveTabs").querySelectorAll("button").forEach(b => { b.classList.toggle("on", b.dataset.emu === saveEmu); b.setAttribute("aria-selected", b.dataset.emu === saveEmu); });
+  $("saveTitle").textContent = `${e.name} · partidas por juego`;
+  const q = $("saveSearch").value.trim().toLowerCase();
+  const list = e.saves.filter(s => !q || s.title.toLowerCase().includes(q));
+  $("saveList").innerHTML = e.running ? `<div class="banner warn"><span style="color:var(--warn);font-weight:800">!</span><div><b>${esc(e.name)} está abierto</b><span class="sub">Ciérralo para restaurar o eliminar partidas.</span></div></div>` : "";
+  $("saveList").innerHTML += list.length ? `<div class="scroll" style="max-height:none;overflow-x:auto"><table class="saves"><thead><tr><th>Juego</th><th>Última partida</th><th>Respaldos</th><th class="num">Tamaño</th><th></th></tr></thead><tbody>${list.map(s => `<tr>
+      <td class="name"><b>${esc(s.title)}</b>${s.kind === "savestate" ? ` <span class="tag">estado guardado</span>` : s.kind === "memcard" ? ` <span class="tag">memory card</span>` : ""}
+        ${s.title_id && s.title !== s.title_id ? `<span class="sub" style="display:block">${esc(s.title_id)}</span>` : ""}</td>
+      <td class="muted">${date(s.mtime)}</td>
+      <td class="muted">${s.backups.length ? `en ${s.backups.length} respaldos` : `<span style="color:var(--warn)">sin respaldo</span>`}</td>
+      <td class="num muted">${gb(s.size)}</td>
+      <td class="num" style="white-space:nowrap"><button class="b" data-backup="${saveEmu}" data-only="${esc(s.id)}">Respaldar</button>
+        <button class="b" data-menu="${esc(s.id)}" aria-label="Más acciones" aria-haspopup="menu">⋯</button></td></tr>`).join("")}</tbody></table></div>`
+    : `<div class="empty">${saveSvg}<b>${q ? "Ningún juego coincide" : `Aún no hay partidas de ${esc(e.name)}`}</b>${q ? "" : "Juega cualquier juego y aparecerán aquí. Los respaldos se hacen solos cada día."}</div>`;
+  const bks = saves.backups.filter(b => b.emulator === saveEmu).slice(0, 12);
+  $("bkList").innerHTML = bks.length ? bks.map(b => { const i = bkInfo(b.name);
+    return `<div class="bk"><div style="flex:1;min-width:0"><b>${esc(i.when)}</b><span class="sub">${esc(i.tag)} · ${b.saves} partidas · ${gb(b.size)}</span></div>
+      <button class="b" data-restore="${esc(b.name)}" data-emu="${esc(b.emulator)}">Restaurar</button>
+      <a class="b" href="/api/files/download?path=${encodeURIComponent(b.path)}" aria-label="Descargar respaldo" title="Descargar">⬇</a>
+      <button class="b" data-bkdel="${esc(b.name)}" aria-label="Eliminar respaldo" title="Eliminar respaldo">✕</button></div>`; }).join("")
+    : `<p class="sub">Aún no hay respaldos de ${esc(e.name)}.</p>`;
+}
+const saveSvg = `<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5 3h11l3 3v15H5zM8 3v5h7V3M8 14h8v7H8z"></path></svg>`;
+// Menú «⋯» de una partida: restaurar desde sus respaldos, archivos, descargar y eliminar.
+function openSaveMenu(btn, id) {
+  const s = saves.emulators[saveEmu].saves.find(x => x.id === id), m = $("saveMenu");
+  const latest = saves.backups.find(b => b.name === s.backups[0]);
+  m.innerHTML = (s.backups.length ? s.backups.slice(0, 3).map(n => { const i = bkInfo(n);
+      return `<button role="menuitem" data-restore="${esc(n)}" data-emu="${saveEmu}" data-only="${esc(id)}">Restaurar desde ${esc(i.when)} <span class="sub">${esc(i.tag)}</span></button>`; }).join("")
+      : `<span class="sub" style="padding:8px 12px">Sin respaldos todavía</span>`)
+    + `<button role="menuitem" data-files="${esc(id)}">Ver archivos</button>`
+    + (latest ? `<a role="menuitem" href="/api/files/download?path=${encodeURIComponent(latest.path)}">Descargar último respaldo (.zip)</a>` : "")
+    + `<hr><button role="menuitem" class="danger" data-delsave="${esc(id)}">Eliminar partida…</button>`;
+  m.hidden = false;
+  const r = btn.getBoundingClientRect();
+  m.style.top = Math.min(r.bottom + 6, innerHeight - m.offsetHeight - 10) + "px";
+  m.style.left = Math.max(10, r.right - m.offsetWidth) + "px";
+  m.querySelector("button, a")?.focus();
+}
+document.addEventListener("click", e => { if (!e.target.closest("#saveMenu, [data-menu]")) $("saveMenu").hidden = true; });
+document.addEventListener("keydown", e => { if (e.key === "Escape") $("saveMenu").hidden = true; });
+$("saveTabs").onclick = e => { const b = e.target.closest("[data-emu]"); if (b) { saveEmu = b.dataset.emu; renderSaves(); } };
+$("saveSearch").oninput = () => renderSaves();
+$("saveAll").onclick = async () => {
+  for (const k of Object.keys(saves.emulators).filter(k => saves.emulators[k].saves.length))
+    await act(() => api("/api/saves/backup", {emulator: k}));
+  toast("Respaldando todo · mira la pestaña Tareas"); pollJobs(); setTimeout(loadSaves, 4000);
+};
 $("tab-saves").onclick = async e => {
   const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.menu) { e.stopPropagation(); return openSaveMenu(b, b.dataset.menu); }
+  $("saveMenu").hidden = true;
+  const s = id => saves.emulators[saveEmu].saves.find(x => x.id === id);
   if (b.id === "doMigrate") {
-    if (!confirm("¿Copiar las partidas y el perfil de yuzu a Eden?")) return;
+    if (!await ask("¿Copiar las partidas y el perfil de yuzu a Eden?")) return;
     await act(() => api("/api/saves/migrate", {}), "Migrando · mira la pestaña Tareas");
   } else if (b.dataset.backup) {
     await act(() => api("/api/saves/backup", {emulator: b.dataset.backup, only: b.dataset.only}), "Respaldando…");
   } else if (b.dataset.restore) {
-    if (!confirm(`¿Restaurar ${b.dataset.restore}?\nSe sobrescriben las partidas actuales (antes se hace un respaldo automático).`)) return;
-    await act(() => api("/api/saves/restore", {name: b.dataset.restore, emulator: b.dataset.emu}), "Restaurando…");
+    const what = b.dataset.only ? `la partida de «${s(b.dataset.only).title}»` : "todas las partidas de este respaldo";
+    if (!await ask(`¿Restaurar ${what}?\nSe sobrescribe lo actual; antes se hace un respaldo automático.`)) return;
+    await act(() => api("/api/saves/restore", {name: b.dataset.restore, emulator: b.dataset.emu, only: b.dataset.only}), "Restaurando…");
+  } else if (b.dataset.delsave) {
+    if (!await ask(`¿Eliminar la partida de «${s(b.dataset.delsave).title}»?\nVa a la papelera del Deck: se puede recuperar. Antes se guarda un respaldo con la fecha de hoy.`)) return;
+    await act(() => api("/api/saves/delete", {emulator: saveEmu, id: b.dataset.delsave}), "Partida enviada a la papelera");
+    return loadSaves();
+  } else if (b.dataset.bkdel) {
+    if (!await ask(`¿Eliminar el respaldo del ${bkInfo(b.dataset.bkdel).when}?\nVa a la papelera del Deck.`)) return;
+    await act(() => api("/api/saves/backups/delete", {emulator: saveEmu, name: b.dataset.bkdel}), "Respaldo enviado a la papelera");
+    return loadSaves();
+  } else if (b.dataset.files) {
+    const base = {pcsx2: "/home/deck/.var/app/net.pcsx2.PCSX2/config/PCSX2/", eden: "/home/deck/.var/app/dev.eden_emu.eden/data/eden/nand/user/save/0000000000000000/",
+      yuzu: "/home/deck/.var/app/org.yuzu_emu.yuzu/data/yuzu/nand/user/save/0000000000000000/"}[saveEmu];
+    // Switch: la carpeta de la partida; PCSX2: memcards o sstates.
+    return openFiles(base + (saveEmu === "pcsx2" ? b.dataset.files.split("/")[0] : b.dataset.files));
   } else return;
-  pollJobs();
+  pollJobs(); setTimeout(loadSaves, 4000);
 };
 $("bkDaily").onchange = () => act(() => api("/api/settings", {backup_daily: $("bkDaily").checked}), "Guardado");
 $("bkKeep").onchange = () => act(() => api("/api/settings", {backup_keep: +$("bkKeep").value || 10}), "Guardado");
@@ -1204,50 +1725,89 @@ const money = (cents, cur) => cents == null ? "—" : new Intl.NumberFormat(unde
   maximumFractionDigits: ["CLP", "JPY", "COP", "CRC"].includes(cur) ? 0 : 2}).format(cents / 100);
 const capsule = appid => `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/capsule_231x87.jpg`;
 
+let stFilter = "sale";
+// Alertas «sin leer»: las posteriores a la última vez que se marcaron como leídas en este navegador.
+const alertsSeen = () => { try { return +localStorage.getItem("deckhub.alertsSeen") || 0; } catch { return 0; } };
+function updateAlertBadges() {
+  const unread = store ? store.notifications.filter(n => n.time > alertsSeen()).length : 0;
+  $("bellDot").hidden = !unread;
+  setNavCount("store", unread);
+  return unread;
+}
+const isBelowTarget = i => i.target && i.price.final && i.price.final <= i.target;
 async function loadStore() {
   store = await api("/api/store");
-  $("stStatus").textContent = `${store.items.length} juegos en seguimiento · tienda ${store.country || "—"} (${store.currency})` +
-    ` · ${store.last_check ? "revisado " + dt(store.last_check) : "aún sin revisar"} · se revisa cada 6 horas y el plugin te avisa en el Deck.`;
+  $("stStatus").textContent = `Tienda ${store.country || "—"} · precios en ${store.currency} · ${store.last_check ? "revisado " + dt(store.last_check) : "aún sin revisar"} · se revisa cada 6 horas.`;
   if (document.activeElement !== $("stCountry")) $("stCountry").value = store.country || "";
   $("stItad").placeholder = store.itad_key_set ? "Clave guardada · escribe otra para cambiarla" : "Pega tu clave de IsThereAnyDeal (opcional)";
+  const unread = updateAlertBadges();
+  const k = (f, label, value, cls) => `<button class="kpi ${cls || ""} ${stFilter === f ? "on" : ""}" data-f="${f}"><span class="sub">${label}</span><b>${value}</b></button>`;
+  $("stKpis").innerHTML = k("all", "Siguiendo", store.items.length) + k("sale", "En oferta ahora", store.items.filter(i => i.price.discount).length, "sale")
+    + k("low", "En su mínimo histórico", store.items.filter(i => i.at_low).length, "low") + k("alerts", "Alertas sin leer", unread, unread ? "alert" : "");
   renderStore();
+  const seen = alertsSeen();
   $("stNotes").innerHTML = store.notifications.length
-    ? store.notifications.map(n => `<div class="row"><span>${esc(n.title)}<br><span class="sub">${esc(n.body)}</span></span><span class="sub">${dt(n.time)}</span></div>`).join("")
-    : `<p class="sub">Todavía no hay alertas.</p>`;
+    ? store.notifications.map(n => `<div class="note ${n.time > seen ? "new" : ""}"><span class="ndot"></span><div><b>${esc(n.title)}</b><span class="sub">${esc(n.body)}</span></div><span class="sub">${date(n.time)}</span></div>`).join("")
+    : `<div class="empty"><b>Todavía no hay alertas</b>Cuando un juego que sigues baje de precio, aparece aquí y en el Deck.</div>`;
+}
+// Gráfico mini del precio con el historial que guarda DeckHub (cambios de precio + hoy).
+function sparkline(i) {
+  const pts = [...(i.history || [])];
+  if (i.price.final) pts.push([Date.now() / 1000, i.price.final]);
+  if (pts.length < 2) return `<span class="sub" style="font-size:11px">Sin historial aún</span>`;
+  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs) || x0 + 1, y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const W = 120, H = 34, sx = x => 2 + (W - 4) * (x - x0) / ((x1 - x0) || 1), sy = y => 3 + (H - 6) * (1 - (y - y0) / ((y1 - y0) || 1));
+  const d = pts.map((p, n) => `${n ? "L" : "M"}${sx(p[0]).toFixed(1)},${sy(p[1]).toFixed(1)}`).join(" ");
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Historial de precio"><path d="${d}" fill="none" stroke="${i.at_low ? "var(--ok)" : "var(--link)"}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path></svg>`;
 }
 function renderStore() {
   if (!store) return;
   const cur = store.currency;
-  const list = store.items.filter(i => !$("stOnlySale").checked || i.price.discount);
-  $("stList").innerHTML = list.length ? `<table class="store"><thead><tr><th></th><th>Juego</th><th class="num">Precio</th><th class="num">Mínimo histórico</th><th>Avisarme</th><th></th></tr></thead><tbody>${list.map(i => {
+  $("stFilters").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.f === stFilter));
+  const filt = {all: () => true, sale: i => i.price.discount, low: i => i.at_low, target: isBelowTarget, alerts: i => store.notifications.some(n => n.appid === i.appid)}[stFilter];
+  const sort = {discount: (a, b) => (b.price.discount || 0) - (a.price.discount || 0), name: (a, b) => a.name.localeCompare(b.name),
+    price: (a, b) => (a.price.final || 1e15) - (b.price.final || 1e15),
+    low: (a, b) => ((a.price.final || 1e15) / (a.low || 1)) - ((b.price.final || 1e15) / (b.low || 1))}[$("stSort").value];
+  const list = store.items.filter(filt).sort(sort);
+  $("stList").innerHTML = list.length ? list.map(i => {
     const p = i.price;
     const price = !p.purchasable ? `<span class="sub">${p.free ? "Gratis" : "No disponible"}</span>`
-      : `${p.discount ? `<span class="disc">-${p.discount}%</span> <s class="sub">${esc(p.formatted_initial || money(p.initial, cur))}</s><br>` : ""}<b>${esc(p.formatted || money(p.final, cur))}</b>${p.discount_end ? `<br><span class="sub">hasta ${date(p.discount_end)}</span>` : ""}`;
-    return `<tr class="${i.at_low ? "atlow" : ""}">
-      <td><a href="${esc(p.url || "https://store.steampowered.com/app/" + i.appid)}" target="_blank"><img class="capsule" loading="lazy" src="${capsule(i.appid)}" alt=""></a></td>
-      <td class="name"><b>${esc(i.name)}</b><br>${p.deck ? `<span class="tag ${p.deck === "Verificado" ? "ok" : p.deck === "Jugable" ? "warn" : "bad"}">Deck: ${esc(p.deck)}</span> ` : ""}
-        ${p.reviews ? `<span class="sub">${esc(p.reviews)}${p.reviews_pct ? ` (${p.reviews_pct}%)` : ""}</span>` : ""}${i.source === "wishlist" ? ` <span class="tag">deseado</span>` : ""}</td>
-      <td class="num">${price}</td>
-      <td class="num">${i.low ? money(i.low, cur) : "—"}${i.at_low ? `<br><span class="tag ok">¡en mínimo!</span>` : i.low ? `<br><span class="sub">${esc(i.low_source)}</span>` : ""}</td>
-      <td><div class="toolbar" style="margin:0"><input type="number" min="0" step="any" class="target" data-st-target="${i.appid}" placeholder="Precio objetivo" value="${i.target ? i.target / 100 : ""}">
-        <label class="sub"><input type="checkbox" data-st-low="${i.appid}" ${i.notify_low ? "checked" : ""}> en mínimo</label></div></td>
-      <td class="num"><button class="b" data-st-remove="${i.appid}" title="Dejar de seguir">✕</button></td></tr>`;
-  }).join("")}</tbody></table>`
-    : `<p class="sub">${store.items.length ? "Ningún juego en oferta ahora." : "Importa tu lista de deseados o busca un juego para empezar."}</p>`;
+      : `${p.discount ? `<span class="disc">-${p.discount}%</span> <s class="sub">${esc(p.formatted_initial || money(p.initial, cur))}</s>` : ""}<b class="pr">${esc(p.formatted || money(p.final, cur))}</b>`;
+    return `<article class="deal ${i.at_low ? "atlow" : ""}">
+      <a href="${esc(p.url || "https://store.steampowered.com/app/" + i.appid)}" target="_blank" class="dcap"><img loading="lazy" src="${capsule(i.appid)}" alt=""></a>
+      <div class="dinfo"><b>${esc(i.name)}</b><div class="dtags">${p.deck ? `<span class="tag ${p.deck === "Verificado" ? "ok" : p.deck === "Jugable" ? "warn" : "bad"}">Deck: ${esc(p.deck)}</span>` : ""}
+        ${p.reviews ? `<span class="tag">${esc(p.reviews)}</span>` : ""}${p.discount_end ? `<span class="tag">hasta ${date(p.discount_end)}</span>` : ""}${i.source === "wishlist" ? `<span class="tag">deseado</span>` : ""}</div></div>
+      <figure class="dspark">${sparkline(i)}</figure>
+      <div class="dprice">${price}<span class="sub ${i.at_low ? "okc" : ""}">${i.at_low ? "¡En su mínimo histórico!" : i.low ? "Mínimo: " + money(i.low, cur) : ""}</span></div>
+      <div class="dalert">
+        <label class="sub">Avisar bajo<input type="number" min="0" step="any" class="target" data-st-target="${i.appid}" placeholder="Objetivo" value="${i.target ? i.target / 100 : ""}"></label>
+        <button class="hbtn bell ${i.notify_low ? "on" : ""}" data-st-low="${i.appid}" aria-pressed="${i.notify_low}" title="Avisar en mínimo histórico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8"></path><path d="M10 20a2 2 0 0 0 4 0"></path></svg></button>
+        <button class="hbtn" data-st-remove="${i.appid}" aria-label="Dejar de seguir" title="Dejar de seguir">✕</button>
+      </div></article>`;
+  }).join("")
+    : `<div class="empty"><b>${store.items.length ? "Nada con este filtro ahora" : "Aún no sigues ningún juego"}</b>${store.items.length ? "Prueba con «Todos»." : "Importa tu lista de deseados o pulsa «+ Seguir un juego»."}</div>`;
 }
-const stSave = async appid => {
-  const t = document.querySelector(`[data-st-target="${appid}"]`).value, low = document.querySelector(`[data-st-low="${appid}"]`).checked;
-  await act(() => api("/api/store/track", {appid, target: t === "" ? null : Math.round(parseFloat(t) * 100), notify_low: low}), "Alerta guardada");
-  loadStore();
+const stTrack = (appid, patch) => {
+  const i = store.items.find(x => x.appid === appid);
+  return act(() => api("/api/store/track", {appid, target: i.target, notify_low: i.notify_low, ...patch}), "Alerta guardada").then(loadStore);
 };
 $("stList").addEventListener("change", e => {
-  const id = e.target.dataset.stTarget || e.target.dataset.stLow; if (id) stSave(+id);
+  const id = +e.target.dataset.stTarget; if (!id) return;
+  const t = e.target.value;
+  stTrack(id, {target: t === "" ? null : Math.round(parseFloat(t) * 100)});
 });
 $("stList").onclick = async e => {
+  const low = e.target.closest("[data-st-low]");
+  if (low) { const i = store.items.find(x => x.appid === +low.dataset.stLow); return stTrack(i.appid, {notify_low: !i.notify_low}); }
   const b = e.target.closest("[data-st-remove]"); if (!b) return;
   await act(() => api("/api/store/untrack", {appid: +b.dataset.stRemove}), "Ya no se sigue"); loadStore();
 };
-$("stOnlySale").onchange = renderStore;
+$("stFilters").onclick = e => { const b = e.target.closest("[data-f]"); if (b) { stFilter = b.dataset.f; loadStore(); } };
+$("stKpis").onclick = e => { const b = e.target.closest("[data-f]"); if (b) { stFilter = b.dataset.f; loadStore(); } };
+$("stSort").onchange = renderStore;
+$("stAddBtn").onclick = () => { $("stAddCard").hidden = !$("stAddCard").hidden; if (!$("stAddCard").hidden) $("stSearch").focus(); };
+$("stMarkRead").onclick = () => { try { localStorage.setItem("deckhub.alertsSeen", String(Date.now() / 1000)); } catch {} loadStore(); };
 $("stImport").onclick = async () => {
   $("stImport").disabled = true;
   try {
@@ -1349,7 +1909,7 @@ function artEditor(el, g) {
       pick.closest("[data-kind]").querySelectorAll(".pick").forEach(x => x.classList.toggle("on", x === pick));
       setTimeout(() => { refresh(); el.dispatchEvent(new CustomEvent("artchange", {detail: kind})); }, 8000);
     } else if (e.target.closest("[data-art-reset]")) {
-      if (!confirm(`¿Quitar las imágenes personalizadas de «${g.title}» y volver a las originales?`)) return;
+      if (!await ask(`¿Quitar las imágenes personalizadas de «${g.title}» y volver a las originales?`)) return;
       await act(() => api("/api/custom/art/reset", {appid: g.appid}), "Restaurando en Steam…");
       setTimeout(() => { refresh(); el.dispatchEvent(new CustomEvent("artchange", {detail: "all"})); }, 8000);
     }
@@ -1429,7 +1989,7 @@ $("tab-custom").addEventListener("click", async e => {
       if (r.via === "css_loader") setTimeout(async () => { custom = await api("/api/custom"); renderThemes(); }, 15000);
     } catch { b.disabled = false; b.textContent = "Instalar"; }
   } else {
-    if (!confirm(`¿Quitar el tema «${b.dataset.thRemove}»? (va a la papelera)`)) return;
+    if (!await ask(`¿Quitar el tema «${b.dataset.thRemove}»? (va a la papelera)`)) return;
     await act(() => api("/api/custom/themes/remove", {folder: b.dataset.thRemove}), "Tema quitado");
   }
   custom = await api("/api/custom"); renderThemes();
@@ -1460,7 +2020,7 @@ $("mvClear").onclick = async () => { await act(() => api("/api/custom/movies/def
 $("mvList").onclick = async e => {
   const b = e.target.closest("[data-mv-default], [data-mv-delete]"); if (!b) return;
   if (b.dataset.mvDefault) await act(() => api("/api/custom/movies/default", {name: b.dataset.mvDefault}), "Se usará en el próximo arranque");
-  else { if (!confirm(`¿Quitar ${b.dataset.mvDelete}? (va a la papelera)`)) return; await act(() => api("/api/custom/movies/delete", {name: b.dataset.mvDelete}), "Quitado"); }
+  else { if (!await ask(`¿Quitar ${b.dataset.mvDelete}? (va a la papelera)`)) return; await act(() => api("/api/custom/movies/delete", {name: b.dataset.mvDelete}), "Quitado"); }
   custom = await api("/api/custom"); renderMovies();
 };
 
@@ -1575,9 +2135,9 @@ $("tab-cheats").onclick = async e => {
   try {
     if (b.dataset.ps2save) await act(() => api("/api/cheats/ps2/save", {path: ps2(b.dataset.ps2save).path, text: document.querySelector(`[data-ps2text="${b.dataset.ps2save}"]`).value}), "Trucos guardados y activados");
     else if (b.dataset.ps2toggle) { const g = ps2(b.dataset.ps2toggle); await act(() => api("/api/cheats/ps2/toggle", {path: g.path, enabled: !g.enabled}), "Listo"); }
-    else if (b.dataset.ps2del) { if (!confirm("¿Quitar los trucos de este juego? (van a la papelera)")) return; await act(() => api("/api/cheats/ps2/delete", {path: ps2(b.dataset.ps2del).path}), "Quitados"); }
+    else if (b.dataset.ps2del) { if (!await ask("¿Quitar los trucos de este juego? (van a la papelera)")) return; await act(() => api("/api/cheats/ps2/delete", {path: ps2(b.dataset.ps2del).path}), "Quitados"); }
     else if (b.dataset.swtoggle) { const c = sw(b.dataset.swtoggle); await act(() => api("/api/cheats/eden/toggle", {title_id: c.title_id, name: c.name, enabled: !c.enabled}), "Listo"); }
-    else if (b.dataset.swdel) { const c = sw(b.dataset.swdel); if (!confirm(`¿Quitar «${c.name}»? (va a la papelera)`)) return; await act(() => api("/api/cheats/eden/delete", {title_id: c.title_id, name: c.name}), "Quitado"); }
+    else if (b.dataset.swdel) { const c = sw(b.dataset.swdel); if (!await ask(`¿Quitar «${c.name}»? (va a la papelera)`)) return; await act(() => api("/api/cheats/eden/delete", {title_id: c.title_id, name: c.name}), "Quitado"); }
     else return;
   } catch { return; }
   loadCheats();
@@ -1615,7 +2175,7 @@ $("sgdbForm").onsubmit = async e => {
 };
 $("lanAccess").onchange = async () => {
   const on = $("lanAccess").checked;
-  if (!on && !confirm("¿Cerrar el panel a la red?\n\nEsta página dejará de responder. Para volver a abrirlo usa el interruptor «Acceso desde la red» en el plugin de Decky.")) { $("lanAccess").checked = true; return; }
+  if (!on && !await ask("¿Cerrar el panel a la red?\n\nEsta página dejará de responder. Para volver a abrirlo usa el interruptor «Acceso desde la red» en el plugin de Decky.")) { $("lanAccess").checked = true; return; }
   try { await act(() => api("/api/settings", {lan_access: on}), on ? "Abierto a la red" : "Cerrado a la red · el daemon se reinicia"); } catch { $("lanAccess").checked = !on; }
 };
 $("autoArt").onchange = () => act(() => api("/api/settings", {auto_artwork: $("autoArt").checked}), "Guardado");
@@ -1636,7 +2196,7 @@ async function loadPackages() {
 }
 $("pkgList").onclick = async e => {
   const b = e.target.closest("button[data-uninstall]"); if (!b) return;
-  if (!confirm(`¿Desinstalar ${b.dataset.name}?\nSus datos de usuario (~/.var/app) se conservan.`)) return;
+  if (!await ask(`¿Desinstalar ${b.dataset.name}?\nSus datos de usuario (~/.var/app) se conservan.`)) return;
   await act(() => api("/api/packages/uninstall", {id: b.dataset.uninstall}), "Desinstalando · mira la pestaña Tareas"); pollJobs();
 };
 $("pkgSearchForm").onsubmit = async e => {
@@ -1704,7 +2264,11 @@ $("onboardList").onclick = e => { const b = e.target.closest("[data-go]"); if (b
 $("onboardHide").onclick = () => { try { localStorage.setItem("deckhub.onboard.hidden", "1"); } catch {} $("onboard").hidden = true; };
 
 // --- Inicio -------------------------------------------------------------------
-initI18n().then(() => loadOnboarding());
+initI18n().then(async () => {
+  loadOnboarding();
+  // Con sesión iniciada, la campana muestra las alertas de precio sin leer desde el inicio.
+  try { if ((await (await fetch("/api/auth")).json()).authed) { store = await api("/api/store"); updateAlertBadges(); } } catch {}
+});
 tick(); setInterval(tick, 2000);
 try { const t = localStorage.getItem("deckhub.tab"); if (t && t !== "summary") document.querySelector(`#tabs button[data-tab="${t}"]`)?.click(); } catch {}
 </script>

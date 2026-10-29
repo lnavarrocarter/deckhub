@@ -1,6 +1,7 @@
 """Rutas protegidas por token: unidades, archivos, espacio, paquetes, juegos y tareas."""
 import asyncio
 import os
+import re
 from pathlib import Path
 from urllib.parse import quote
 
@@ -138,6 +139,24 @@ async def roms_list(request):
 
 async def emulators_list(request):
     return _ok(await emulators.collect())
+
+
+FLATPAK_ICONS = [Path("/var/lib/flatpak/exports/share/icons/hicolor"),
+                 Path.home() / ".local/share/flatpak/exports/share/icons/hicolor"]
+
+
+async def emulators_icon(request):
+    """Ícono de un emulador: el que trae su Flatpak instalado o, si no, el de Flathub."""
+    app_id = request.query.get("id", "")
+    if not re.fullmatch(r"[A-Za-z0-9_.-]{3,120}", app_id):
+        raise ValueError(f"id de flatpak no válido: {app_id}")
+    for size in ("scalable", "512x512", "256x256", "128x128", "64x64"):
+        for root in FLATPAK_ICONS:
+            for ext in ("svg", "png"):
+                f = root / size / "apps" / f"{app_id}.{ext}"
+                if f.is_file():
+                    return web.FileResponse(f, headers={"Cache-Control": "max-age=86400"})
+    raise web.HTTPFound(f"https://dl.flathub.org/repo/appstream/x86_64/icons/128x128/{app_id}.png")
 
 
 async def emulators_install(request):
@@ -505,7 +524,19 @@ async def saves_backup(request):
 
 async def saves_restore(request):
     b = await _body(request)
-    return _ok(saves.restore(b["name"], b["emulator"]))
+    return _ok(saves.restore(b["name"], b["emulator"], b.get("only")))
+
+
+async def saves_delete(request):
+    b = await _body(request)
+    saves.delete_save(b["emulator"], b["id"])
+    return _ok()
+
+
+async def saves_backup_delete(request):
+    b = await _body(request)
+    saves.delete_backup(b["emulator"], b["name"])
+    return _ok()
 
 
 async def saves_migrate(request):
@@ -578,6 +609,7 @@ def setup(app):
     r.add_post("/api/packages/uninstall", packages_uninstall)
     r.add_get("/api/roms", roms_list)
     r.add_get("/api/emulators", emulators_list)
+    r.add_get("/api/emulators/icon", emulators_icon)
     r.add_post("/api/emulators/install", emulators_install)
     r.add_post("/api/emulators/configure", emulators_configure)
     r.add_post("/api/emulators/eden/firmware", eden_firmware)
@@ -635,6 +667,8 @@ def setup(app):
     r.add_get("/api/saves", saves_list)
     r.add_post("/api/saves/backup", saves_backup)
     r.add_post("/api/saves/restore", saves_restore)
+    r.add_post("/api/saves/delete", saves_delete)
+    r.add_post("/api/saves/backups/delete", saves_backup_delete)
     r.add_post("/api/saves/migrate", saves_migrate)
     r.add_get("/api/cheats", cheats_list)
     r.add_post("/api/cheats/ps2/save", cheats_ps2_save)

@@ -46,6 +46,7 @@ El token está en `~/.config/deckhub/token` del Deck. Las rutas protegidas respo
 | GET | `/api/roms` | `?refresh=1` |
 | GET | `/api/emulators` | |
 | POST | `/api/emulators/install`, `/api/emulators/configure` | `{id}` |
+| GET | `/api/emulators/icon` | `?id=`: ícono del Flatpak (o redirección a Flathub) |
 | POST | `/api/emulators/eden/firmware` | multipart (zip) o `{path}` → tarea |
 | POST | `/api/emulators/eden/keys` | multipart `prod.keys` / `title.keys` |
 
@@ -125,6 +126,9 @@ El token está en `~/.config/deckhub/token` del Deck. Las rutas protegidas respo
 | GET | `/api/saves` | |
 | POST | `/api/saves/backup` | `{emulator, only?}` |
 | POST | `/api/saves/restore` | `{name, emulator}` |
+| POST | `/api/saves/restore` | `{name, emulator, only?}` (`only`: id de una partida) |
+| POST | `/api/saves/delete` | `{emulator, id}`: a la papelera, con respaldo previo |
+| POST | `/api/saves/backups/delete` | `{emulator, name}` |
 | POST | `/api/saves/migrate` | yuzu → Eden |
 | GET | `/api/cheats` | |
 | POST | `/api/cheats/ps2/save` | `{path, text}` |

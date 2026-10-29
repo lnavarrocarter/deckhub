@@ -1,5 +1,17 @@
 # Cambios
 
+## 0.11.0 (2026-10-29)
+
+Interfaz según la propuesta de layout (escritorio y móvil):
+
+- Base visual nueva: colores, menú con íconos y contadores, búsqueda y campana de alertas arriba; en el móvil, pestañas abajo (Juegos, Ofertas, Emuladores, Partidas, Más).
+- Juegos: «Continuar jugando» con imagen de fondo y Jugar, conteo por origen, Jugar al pasar sobre la portada, ROMs sin agregar a Steam marcadas y aviso si el plugin no responde.
+- Detalle: tarjetas de datos, carátulas actuales y precio en la tienda si el juego está en seguimiento.
+- Ofertas: resumen (siguiendo, en oferta, en mínimo, alertas sin leer), filtros, orden, historial de precio por juego, campana por juego y alertas con «marcar leídas».
+- Emuladores: logos reales (ícono del Flatpak o de Flathub), tarjeta de «necesita atención» con lista de comprobación y sección «Más consolas».
+- Partidas: selector por emulador, «Respaldar» y menú «⋯» por juego (restaurar solo esa partida desde un respaldo, ver archivos, descargar, eliminar a la papelera con respaldo previo), historial y espacio de respaldos.
+- Confirmaciones con diálogo propio (lo destructivo en rojo), estados vacíos y siluetas de carga.
+
 ## 0.10.0 (2026-10-29)
 
 - Multi-idioma: el panel y el plugin usan el idioma de Steam (español e inglés); selector 🌐 en el panel. Los idiomas son archivos JSON (`py_modules/deckhub/web/i18n/`), ver `docs/translating.md`.

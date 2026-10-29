@@ -12,7 +12,7 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 
-from .. import config, jobs
+from .. import config, fileops, jobs
 from . import emulators, ps2ids, roms
 
 log = logging.getLogger("deckhub.saves")
@@ -76,13 +76,59 @@ def _pcsx2_saves(serials):
     return out
 
 
+SWITCH_SAVES = "nand/user/save/0000000000000000"
+SWITCH_ID = re.compile(r"[0-9A-Fa-f]{32}/[0-9A-Fa-f]{16}")
+PCSX2_ID = re.compile(r"(memcards/[^/]+\.ps2|sstates/[^/]+\.p2s)")
+
+
+def _save_rel(emu, save_id):
+    """Ruta relativa a la carpeta del emulador de una partida, validando su id."""
+    if emu not in EMUS:
+        raise ValueError(f"emulador desconocido: {emu}")
+    if emu == "pcsx2" and PCSX2_ID.fullmatch(save_id or ""):
+        return save_id
+    if emu != "pcsx2" and SWITCH_ID.fullmatch(save_id or ""):
+        return f"{SWITCH_SAVES}/{save_id}"
+    raise ValueError(f"partida no válida: {save_id}")
+
+
+def _ids_in(emu, names):
+    """Ids de partida presentes en una lista de rutas de un zip."""
+    out = set()
+    for n in names:
+        parts = n.split("/")
+        if emu == "pcsx2" and len(parts) == 2 and parts[0] in ("memcards", "sstates"):
+            out.add(n)
+        elif emu != "pcsx2" and n.startswith(SWITCH_SAVES + "/") and len(parts) >= 7:
+            out.add(f"{parts[4]}/{parts[5]}")
+    return out
+
+
+_zip_ids = {}
+
+
+def _contents(emu, z):
+    """Partidas que contiene un respaldo (cacheado por fecha de modificación)."""
+    key, mtime = str(z), z.stat().st_mtime
+    hit = _zip_ids.get(key)
+    if not hit or hit[0] != mtime:
+        try:
+            with zipfile.ZipFile(z) as f:
+                hit = (mtime, _ids_in(emu, f.namelist()))
+        except zipfile.BadZipFile:
+            hit = (mtime, set())
+        _zip_ids[key] = hit
+    return hit[1]
+
+
 def backups(emu=None):
     out = []
     for e in ([emu] if emu else EMUS):
         folder = BACKUPS / e
         for z in sorted(folder.glob("*.zip"), reverse=True) if folder.exists() else []:
-            out.append({"emulator": e, "name": z.name, "path": str(z),
-                        "size": z.stat().st_size, "mtime": int(z.stat().st_mtime)})
+            out.append({"emulator": e, "name": z.name, "path": str(z), "auto": "-auto" in z.name,
+                        "size": z.stat().st_size, "mtime": int(z.stat().st_mtime),
+                        "saves": len(_contents(e, z))})
     return out
 
 
@@ -96,6 +142,9 @@ async def collect():
         if not e["base"].exists():
             continue
         saves = _pcsx2_saves(serials) if key == "pcsx2" else _switch_saves(key, titles)
+        zips = sorted((BACKUPS / key).glob("*.zip"), reverse=True) if (BACKUPS / key).exists() else []
+        for sv in saves:
+            sv["backups"] = [z.name for z in zips if sv["id"] in _contents(key, z)]
         out[key] = {"name": e["name"], "saves": saves, "total": sum(s["size"] for s in saves),
                     "running": emulators._running(e["app"])}
     cfg = config.load()
@@ -109,8 +158,8 @@ async def collect():
 def _zip(job, emu, only=None, tag="manual"):
     e = EMUS[emu]
     base = e["base"]
-    if only:  # una partida concreta de Switch: "perfil/titulo"
-        targets = [base / "nand/user/save/0000000000000000" / only]
+    if only:  # una partida concreta (id de collect())
+        targets = [base / _save_rel(emu, only)]
     else:
         targets = [base / d for d in e["dirs"] if (base / d).exists()]
     files = [f for t in targets for f in ([t] if t.is_file() else t.rglob("*")) if f.is_file()]
@@ -119,7 +168,7 @@ def _zip(job, emu, only=None, tag="manual"):
     job["total"] = sum(f.stat().st_size for f in files)
     folder = BACKUPS / emu
     folder.mkdir(parents=True, exist_ok=True)
-    suffix = f"-{only.split('/')[-1]}" if only else ""
+    suffix = "-" + re.sub(r"[^\w.-]", "_", only.split("/")[-1])[:40] if only else ""
     dest = folder / f"{datetime.now():%Y%m%d-%H%M%S}-{tag}{suffix}.zip"
     tmp = dest.with_suffix(".part")
     with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as z:
@@ -141,20 +190,26 @@ def _prune(emu):
 def backup(emu, only=None):
     if emu not in EMUS:
         raise ValueError(f"emulador desconocido: {emu}")
-    if only and not re.fullmatch(r"[0-9A-Fa-f]{32}/[0-9A-Fa-f]{16}", only):
-        raise ValueError(f"partida no válida: {only}")
+    if only:
+        _save_rel(emu, only)
     label = f"Respaldar partidas de {EMUS[emu]['name']}" + (f" ({only.split('/')[-1]})" if only else "")
     return jobs.start("backup", label, _zip, emu, only)
 
 
-def _restore(job, emu, zpath):
+def _restore(job, emu, zpath, only=None):
     e = EMUS[emu]
     if emulators._running(e["app"]):
         raise RuntimeError(f"Cierra {e['name']} antes de restaurar.")
-    _zip({"done": 0, "total": 0}, emu, tag="antes-de-restaurar")  # por si acaso
+    try:
+        _zip({"done": 0, "total": 0}, emu, only=only, tag="antes-de-restaurar")  # por si acaso
+    except RuntimeError:
+        pass  # no había nada que respaldar (p. ej. la partida se había borrado)
     base = e["base"].resolve()
+    prefix = _save_rel(emu, only) if only else None
     with zipfile.ZipFile(zpath) as z:
-        members = z.infolist()
+        members = [m for m in z.infolist() if not prefix or m.filename == prefix or m.filename.startswith(prefix + "/")]
+        if not members:
+            raise RuntimeError("Ese respaldo no contiene la partida.")
         job["total"] = sum(m.file_size for m in members)
         for m in members:
             dest = (base / m.filename).resolve()
@@ -164,13 +219,37 @@ def _restore(job, emu, zpath):
             job["done"] += m.file_size
 
 
-def restore(name, emu):
+def _backup_path(emu, name):
     if emu not in EMUS:
         raise ValueError(f"emulador desconocido: {emu}")
-    zpath = (BACKUPS / emu / Path(name).name)
+    zpath = BACKUPS / emu / Path(name).name
     if not zpath.is_file():
         raise ValueError(f"no existe el respaldo {name}")
-    return jobs.start("restore", f"Restaurar {zpath.name} en {EMUS[emu]['name']}", _restore, emu, zpath)
+    return zpath
+
+
+def restore(name, emu, only=None):
+    zpath = _backup_path(emu, name)
+    if only:
+        _save_rel(emu, only)
+    label = f"Restaurar {zpath.name} en {EMUS[emu]['name']}" + (f" ({only.split('/')[-1]})" if only else "")
+    return jobs.start("restore", label, _restore, emu, zpath, only)
+
+
+def delete_save(emu, save_id):
+    """Manda una partida a la papelera, con un respaldo previo por si acaso."""
+    e = EMUS.get(emu) or {}
+    if emu in EMUS and emulators._running(e["app"]):
+        raise RuntimeError(f"Cierra {e['name']} antes de eliminar partidas.")
+    path = EMUS[emu]["base"] / _save_rel(emu, save_id)
+    if not path.exists():
+        raise ValueError(f"partida no válida: {save_id}")
+    _zip({"done": 0, "total": 0}, emu, only=save_id, tag="antes-de-eliminar")
+    fileops.trash([str(path)])
+
+
+def delete_backup(emu, name):
+    fileops.trash([str(_backup_path(emu, name))])
 
 
 def _migrate(job):

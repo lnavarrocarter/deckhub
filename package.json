@@ -1,6 +1,6 @@
 {
   "name": "deckhub",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "Supervisor y centro retro para Steam Deck: panel web + plugin de Decky Loader",
   "type": "module",
   "scripts": {
