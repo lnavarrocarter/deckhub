@@ -1,5 +1,13 @@
 # Cambios
 
+## 0.5.0 (2026-10-29)
+
+- Pestaña «Personalización»:
+  - Portadas, fondos y logos de SteamGridDB para cualquier juego de la biblioteca, con selector visual y restaurar originales.
+  - Temas de DeckThemes para CSS Loader: explorar por categoría, instalar, activar y quitar.
+  - Videos de arranque propios (`.webm`).
+  - Fondo de escritorio de KDE.
+
 ## 0.4.0 (2026-10-29)
 
 - Interruptor para abrir/cerrar el panel a la red (puerto 8765), en el plugin y en Ajustes. Cerrado, el daemon escucha solo en 127.0.0.1 y el plugin sigue funcionando.

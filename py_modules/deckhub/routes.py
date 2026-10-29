@@ -8,7 +8,7 @@ from aiohttp import web
 
 from . import fileops, jobs
 from . import config
-from .modules import artwork, cheats, emulators, packages, playtime, roms, saves, shortcuts, storage
+from .modules import artwork, cheats, custom, emulators, packages, playtime, roms, saves, shortcuts, storage
 
 
 def _ok(data=None, **extra):
@@ -209,12 +209,97 @@ async def playtime_report(request):
 
 
 async def art_pending(request):
-    return _ok(shortcuts.pending_art())
+    return _ok(shortcuts.pending_art() + custom.pending_art())
 
 
 async def art_ack(request):
     b = await _body(request)
-    shortcuts.ack_art(b["key"], b.get("error"))
+    if b["key"].startswith("custom:"):
+        custom.ack_art(b["key"].split(":", 1)[1], b.get("error"))
+    else:
+        shortcuts.ack_art(b["key"], b.get("error"))
+    return _ok()
+
+
+# --- Personalización -------------------------------------------------------------
+
+async def custom_get(request):
+    return _ok(await custom.collect())
+
+
+async def custom_art_options(request):
+    q = request.query
+    return _ok(await custom.art_options(q.get("appid", "0"), q.get("kind", "grid"),
+                                        q.get("title", ""), q.get("shortcut") == "1"))
+
+
+async def custom_art_apply(request):
+    b = await _body(request)
+    await custom.art_apply(b["appid"], b["kind"], b["url"])
+    return _ok()
+
+
+async def custom_art_reset(request):
+    b = await _body(request)
+    custom.art_reset(b["appid"], b.get("kinds"))
+    return _ok()
+
+
+async def _upload_into(request, folder):
+    reader = await request.multipart()
+    field = await reader.next()
+    if field is None or not field.filename:
+        raise ValueError("No llegó ningún archivo.")
+    folder.mkdir(parents=True, exist_ok=True)
+    return (await fileops.save_upload(field, str(folder)))["path"]
+
+
+async def custom_movie_upload(request):
+    path = await _upload_into(request, custom.MOVIES)
+    return _ok(custom.check_movie(path).name)
+
+
+async def custom_movie_default(request):
+    name = (await _body(request)).get("name")
+    custom.movie_set_default(name) if name else custom.movie_clear_default()
+    return _ok()
+
+
+async def custom_movie_delete(request):
+    custom.movie_delete((await _body(request))["name"])
+    return _ok()
+
+
+async def custom_wallpaper_upload(request):
+    path = await _upload_into(request, custom.WALL_DIR)
+    return _ok(str(custom.check_wallpaper(path)))
+
+
+async def custom_wallpaper_set(request):
+    return _ok(custom.set_wallpaper((await _body(request))["path"]))
+
+
+async def custom_preview(request):
+    return web.FileResponse(custom.preview_path(request.query.get("path", "")))
+
+
+async def custom_themes_browse(request):
+    q = request.query
+    return _ok(await custom.browse_themes(q.get("search", ""), q.get("target", ""), q.get("page", "1")))
+
+
+async def custom_themes_install(request):
+    return _ok(await custom.install_theme((await _body(request))["id"]))
+
+
+async def custom_themes_toggle(request):
+    b = await _body(request)
+    custom.set_theme_active(b["folder"], bool(b["active"]))
+    return _ok()
+
+
+async def custom_themes_remove(request):
+    custom.remove_theme((await _body(request))["folder"])
     return _ok()
 
 
@@ -368,6 +453,20 @@ def setup(app):
     r.add_post("/api/shortcuts/art/refresh", art_refresh)
     r.add_get("/api/steam/playtime", playtime_get)
     r.add_post("/api/steam/playtime", playtime_report)
+    r.add_get("/api/custom", custom_get)
+    r.add_get("/api/custom/art/options", custom_art_options)
+    r.add_post("/api/custom/art/apply", custom_art_apply)
+    r.add_post("/api/custom/art/reset", custom_art_reset)
+    r.add_post("/api/custom/movies/upload", custom_movie_upload)
+    r.add_post("/api/custom/movies/default", custom_movie_default)
+    r.add_post("/api/custom/movies/delete", custom_movie_delete)
+    r.add_post("/api/custom/wallpaper/upload", custom_wallpaper_upload)
+    r.add_post("/api/custom/wallpaper/set", custom_wallpaper_set)
+    r.add_get("/api/custom/preview", custom_preview)
+    r.add_get("/api/custom/themes/browse", custom_themes_browse)
+    r.add_post("/api/custom/themes/install", custom_themes_install)
+    r.add_post("/api/custom/themes/toggle", custom_themes_toggle)
+    r.add_post("/api/custom/themes/remove", custom_themes_remove)
     r.add_get("/api/settings", settings_get)
     r.add_post("/api/settings", settings_set)
     r.add_get("/api/saves", saves_list)

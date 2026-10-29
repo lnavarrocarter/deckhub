@@ -58,6 +58,15 @@ Comprobaciones: el zip debe tener al menos 20 `.nca`, las llaves deben contener 
 - **Restaurar**: antes de restaurar se hace una copia de lo actual.
 - **Migrar de yuzu a Eden**: copia partidas y perfil.
 
+## Personalización
+
+- **Portadas de la biblioteca**: busca cualquier juego (de Steam o acceso directo), elige el tipo (portada vertical, horizontal, fondo o logo) y haz clic en una de las opciones de SteamGridDB. El plugin la aplica en Steam en segundos. «Restaurar originales» quita las imágenes personalizadas.
+- **Temas del modo juego**: explora DeckThemes por categoría, instala, activa/desactiva y quita temas. Los aplica [CSS Loader](https://deckthemes.com) (se instala desde la tienda de Decky); tras un cambio, pulsa «Actualizar» en CSS Loader si no se ve al momento.
+- **Videos de arranque**: sube `.webm` a `~/.local/share/Steam/config/uioverrides/movies/`; se eligen en Steam → Ajustes → Personalización. «Usar siempre» lo copia como `deck_startup.webm`, que tiene prioridad.
+- **Fondo de escritorio** (KDE): sube imágenes o elige las del sistema. En modo juego se guarda y se aplica al entrar al escritorio.
+
+Todo lo que se quita va a la papelera.
+
 ## Tiempo de juego
 
 Horas totales, últimas 2 semanas y última vez jugado de toda tu biblioteca de Steam, con filtros (Steam, accesos directos, instalados) y búsqueda. El plugin de Decky envía los datos cada 5 minutos.

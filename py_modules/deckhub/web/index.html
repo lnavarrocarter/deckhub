@@ -74,6 +74,14 @@
   dialog input { width: 100%; margin: 8px 0 12px; }
   .name { overflow-wrap: anywhere; }
   .drop { outline: 2px dashed var(--accent); outline-offset: -6px; }
+  .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+  .gallery.wide { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  .gallery .pick { padding: 0; border: 2px solid transparent; border-radius: 6px; background: none; cursor: pointer; overflow: hidden; }
+  .gallery .pick.on, .gallery .pick:hover { border-color: var(--accent); }
+  .gallery .pick img { width: 100%; display: block; }
+  .gallery .theme { border: 1px solid var(--line); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 4px; grid-column: span 2; }
+  .gallery .theme img { width: 100%; border-radius: 4px; aspect-ratio: 16/10; object-fit: cover; }
+  .gallery .theme .muted { color: var(--muted); font-size: 12px; }
 </style>
 </head>
 <body>
@@ -90,6 +98,7 @@
     <button data-tab="games">Juegos</button>
     <button data-tab="emulators">Emuladores</button>
     <button data-tab="saves">Partidas</button>
+    <button data-tab="custom">Personalización</button>
     <button data-tab="playtime">Tiempo de juego</button>
     <button data-tab="cheats">Trucos</button>
     <button data-tab="packages">Paquetes</button>
@@ -207,6 +216,52 @@
       <h2>Buscar en Flathub</h2>
       <form class="toolbar" id="pkgSearchForm"><input type="search" id="pkgQuery" placeholder="ej. retroarch, dolphin, ppsspp" class="grow"><button class="b primary">Buscar</button></form>
       <div id="pkgResults"></div>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-custom">
+    <div class="card">
+      <h2>Portadas de la biblioteca</h2>
+      <p class="sub" style="margin-top:0">Elige un juego (de Steam o acceso directo) y una imagen de SteamGridDB. El plugin la aplica en Steam en unos segundos.</p>
+      <div class="toolbar">
+        <input id="cuGame" class="grow" list="cuGames" placeholder="Busca un juego de tu biblioteca">
+        <datalist id="cuGames"></datalist>
+        <select id="cuKind"><option value="grid">Portada vertical</option><option value="wide">Portada horizontal</option><option value="hero">Fondo (hero)</option><option value="logo">Logo</option></select>
+        <button class="b primary" id="cuSearch">Ver opciones</button>
+        <button class="b" id="cuReset" title="Quitar las imágenes personalizadas de este juego">Restaurar originales</button>
+      </div>
+      <p class="sub" id="cuArtStatus"></p>
+      <div class="gallery" id="cuArt"></div>
+    </div>
+
+    <div class="card">
+      <h2>Temas del modo juego</h2>
+      <p class="sub" style="margin-top:0" id="thStatus"></p>
+      <div id="thInstalled"></div>
+      <h3>Explorar DeckThemes</h3>
+      <div class="toolbar">
+        <input id="thSearch" class="grow" placeholder="Buscar tema">
+        <select id="thTarget"><option value="">Todas las categorías</option></select>
+        <button class="b" id="thGo">Buscar</button>
+      </div>
+      <div class="gallery" id="thBrowse"></div>
+      <div class="toolbar"><span class="grow"></span><button class="b" id="thMore" hidden>Ver más</button></div>
+    </div>
+
+    <div class="card">
+      <h2>Videos de arranque</h2>
+      <p class="sub" style="margin-top:0">Sube videos <b>.webm</b>; aparecen en Steam → Ajustes → Personalización → Video de inicio. «Usar siempre» lo fija por encima de esa elección.</p>
+      <div class="toolbar"><button class="b primary" id="mvUpload">Subir video .webm</button><button class="b" id="mvClear">Volver al video elegido en Steam</button></div>
+      <div id="mvProgress"></div>
+      <div id="mvList"></div>
+    </div>
+
+    <div class="card">
+      <h2>Fondo de escritorio</h2>
+      <p class="sub" style="margin-top:0" id="wpStatus">Para el modo escritorio (KDE). Si estás en modo juego, se aplica la próxima vez que entres al escritorio.</p>
+      <div class="toolbar"><button class="b primary" id="wpUpload">Subir imagen</button></div>
+      <div id="wpProgress"></div>
+      <div class="gallery wide" id="wpList"></div>
     </div>
   </section>
 
@@ -749,6 +804,139 @@ function renderPlaytime() {
 $("ptFilter").onchange = renderPlaytime;
 $("ptSearch").oninput = renderPlaytime;
 loaders.playtime = loadPlaytime;
+
+// --- Personalización ------------------------------------------------------------
+let custom = null, library = [], thPage = 1;
+const preview = p => `/api/custom/preview?path=${encodeURIComponent(p)}`;
+
+async function loadCustom() {
+  const [c, pt] = await Promise.all([api("/api/custom"), library.length ? null : api("/api/steam/playtime")]);
+  custom = c;
+  if (pt) {
+    library = pt.apps.slice().sort((a, b) => a.name.localeCompare(b.name));
+    $("cuGames").innerHTML = library.map(a => `<option value="${esc(a.name)}">`).join("");
+  }
+  if (!library.length) $("cuArtStatus").textContent = "Aún no hay lista de juegos: el plugin de Decky la envía unos segundos después de abrir Steam.";
+  renderThemes(); renderMovies(); renderWalls();
+}
+
+// Portadas
+const cuSelected = () => library.find(a => a.name === $("cuGame").value.trim());
+$("cuSearch").onclick = async () => {
+  const g = cuSelected();
+  if (!g) return toast("Elige un juego de la lista");
+  $("cuArtStatus").textContent = "Buscando en SteamGridDB…"; $("cuArt").innerHTML = "";
+  try {
+    const q = new URLSearchParams({appid: g.appid, kind: $("cuKind").value, title: g.name, shortcut: g.shortcut ? "1" : "0"});
+    const items = await api("/api/custom/art/options?" + q);
+    $("cuArtStatus").textContent = items.length ? `${items.length} opciones para ${g.name} · haz clic en una para aplicarla` : "SteamGridDB no tiene imágenes de este tipo para el juego.";
+    $("cuArt").className = "gallery" + ($("cuKind").value === "grid" ? "" : " wide");
+    $("cuArt").innerHTML = items.map(i => `<button class="pick" data-url="${esc(i.url)}" title="${esc(i.style || "")} ${i.width || ""}×${i.height || ""}"><img loading="lazy" src="${esc(i.thumb)}"></button>`).join("");
+  } catch (e) { $("cuArtStatus").textContent = "Error: " + e.message; }
+};
+$("cuArt").onclick = async e => {
+  const b = e.target.closest("button[data-url]"); const g = cuSelected(); if (!b || !g) return;
+  await act(() => api("/api/custom/art/apply", {appid: g.appid, kind: $("cuKind").value, url: b.dataset.url}), `Aplicando en Steam: ${g.name}`);
+  $("cuArt").querySelectorAll(".pick").forEach(x => x.classList.toggle("on", x === b));
+};
+$("cuReset").onclick = async () => {
+  const g = cuSelected(); if (!g) return toast("Elige un juego de la lista");
+  if (!confirm(`¿Quitar las imágenes personalizadas de «${g.name}» y volver a las originales?`)) return;
+  await act(() => api("/api/custom/art/reset", {appid: g.appid}), "Restaurando en Steam…");
+};
+
+// Temas
+function renderThemes() {
+  const t = custom.themes;
+  if ($("thTarget").options.length === 1) $("thTarget").innerHTML += t.targets.map(x => `<option>${esc(x)}</option>`).join("");
+  $("thStatus").innerHTML = t.css_loader
+    ? "Los temas los aplica <b>CSS Loader</b>. Tras instalar o activar uno, abre CSS Loader en el menú rápido y pulsa <b>Actualizar</b> si no se ve al momento."
+    : "⚠ Falta <b>CSS Loader</b>: instálalo desde la tienda de Decky (menú rápido → Decky → tienda). Puedes instalar temas ya; se aplicarán cuando lo tengas.";
+  $("thInstalled").innerHTML = t.installed.length
+    ? `<table><thead><tr><th>Tema instalado</th><th>Categoría</th><th>Versión</th><th>Activo</th><th></th></tr></thead><tbody>${t.installed.map(x => `<tr>
+        <td>${esc(x.name)} <span class="muted">· ${esc(x.author || "")}</span></td><td class="muted">${esc(x.target || "")}</td><td class="muted">${esc(x.version || "")}</td>
+        <td><input type="checkbox" data-th-toggle="${esc(x.folder)}" ${x.active ? "checked" : ""}></td>
+        <td><button class="b" data-th-remove="${esc(x.folder)}">Quitar</button></td></tr>`).join("")}</tbody></table>`
+    : `<p class="sub">No hay temas instalados.</p>`;
+}
+async function browseThemes(more) {
+  thPage = more ? thPage + 1 : 1;
+  if (!more) $("thBrowse").innerHTML = `<p class="sub">Cargando…</p>`;
+  try {
+    const r = await api("/api/custom/themes/browse?" + new URLSearchParams({search: $("thSearch").value.trim(), target: $("thTarget").value, page: thPage}));
+    const cards = r.items.map(t => `<div class="theme">
+      ${t.image ? `<img loading="lazy" src="${esc(t.image)}">` : ""}
+      <div><b>${esc(t.name)}</b> <span class="muted">${esc(t.version || "")}</span></div>
+      <div class="muted">${esc(t.target || "")} · ${esc(t.author || "")} · ★ ${t.stars ?? 0}</div>
+      <button class="b ${t.installed ? "" : "primary"}" data-th-install="${esc(t.id)}">${t.installed ? "Reinstalar" : "Instalar"}</button></div>`).join("");
+    if (more) $("thBrowse").insertAdjacentHTML("beforeend", cards); else $("thBrowse").innerHTML = cards || `<p class="sub">Sin resultados.</p>`;
+    $("thMore").hidden = thPage * 24 >= r.total;
+  } catch (e) { $("thBrowse").innerHTML = `<p class="sub">Error: ${esc(e.message)}</p>`; }
+}
+$("thGo").onclick = () => browseThemes(false);
+$("thSearch").onkeydown = e => { if (e.key === "Enter") browseThemes(false); };
+$("thTarget").onchange = () => browseThemes(false);
+$("thMore").onclick = () => browseThemes(true);
+$("tab-custom").addEventListener("click", async e => {
+  const b = e.target.closest("[data-th-install], [data-th-remove]"); if (!b) return;
+  if (b.dataset.thInstall) {
+    b.disabled = true; b.textContent = "Instalando…";
+    try { await act(() => api("/api/custom/themes/install", {id: b.dataset.thInstall}), "Tema instalado y activado"); b.textContent = "Instalado"; } catch { b.disabled = false; b.textContent = "Instalar"; }
+  } else {
+    if (!confirm(`¿Quitar el tema «${b.dataset.thRemove}»? (va a la papelera)`)) return;
+    await act(() => api("/api/custom/themes/remove", {folder: b.dataset.thRemove}), "Tema quitado");
+  }
+  custom = await api("/api/custom"); renderThemes();
+});
+$("thInstalled").addEventListener("change", async e => {
+  const c = e.target.closest("[data-th-toggle]"); if (!c) return;
+  try { await act(() => api("/api/custom/themes/toggle", {folder: c.dataset.thToggle, active: c.checked}), c.checked ? "Tema activado" : "Tema desactivado"); }
+  catch { c.checked = !c.checked; }
+});
+
+// Videos de arranque
+function renderMovies() {
+  const m = custom.movies.items;
+  $("mvList").innerHTML = m.length
+    ? `<table><thead><tr><th>Video</th><th class="num">Tamaño</th><th></th></tr></thead><tbody>${m.map(x => `<tr>
+        <td><a href="${preview(custom.movies.dir + "/" + x.name)}" target="_blank">${esc(x.name)}</a>${x.default ? ` <span class="muted">· se usa siempre</span>` : ""}</td>
+        <td class="num muted">${gb(x.size)}</td>
+        <td class="num">${x.default ? "" : `<button class="b" data-mv-default="${esc(x.name)}">Usar siempre</button>`} <button class="b" data-mv-delete="${esc(x.name)}">Quitar</button></td></tr>`).join("")}</tbody></table>`
+    : `<p class="sub">No hay videos propios todavía.</p>`;
+}
+$("mvUpload").onclick = async () => {
+  const [f] = await pickFiles(".webm,video/webm", false); if (!f) return;
+  const form = new FormData(); form.append("file", f, f.name);
+  try { await uploadTo("/api/custom/movies/upload", form, $("mvProgress")); toast("Video subido"); } catch (e) { toast("Error: " + e.message); }
+  custom = await api("/api/custom"); renderMovies();
+};
+$("mvClear").onclick = async () => { await act(() => api("/api/custom/movies/default", {name: null}), "Steam usará el video elegido en Personalización"); custom = await api("/api/custom"); renderMovies(); };
+$("mvList").onclick = async e => {
+  const b = e.target.closest("[data-mv-default], [data-mv-delete]"); if (!b) return;
+  if (b.dataset.mvDefault) await act(() => api("/api/custom/movies/default", {name: b.dataset.mvDefault}), "Se usará en el próximo arranque");
+  else { if (!confirm(`¿Quitar ${b.dataset.mvDelete}? (va a la papelera)`)) return; await act(() => api("/api/custom/movies/delete", {name: b.dataset.mvDelete}), "Quitado"); }
+  custom = await api("/api/custom"); renderMovies();
+};
+
+// Fondo de escritorio
+function renderWalls() {
+  const w = custom.wallpapers;
+  $("wpList").innerHTML = w.items.map(x => `<button class="pick ${x.current ? "on" : ""}" data-wp="${esc(x.path)}" title="${esc(x.name)}${x.own ? "" : " (sistema)"}"><img loading="lazy" src="${preview(x.path)}"></button>`).join("");
+}
+$("wpUpload").onclick = async () => {
+  const [f] = await pickFiles("image/jpeg,image/png,image/webp", false); if (!f) return;
+  const form = new FormData(); form.append("file", f, f.name);
+  try { await uploadTo("/api/custom/wallpaper/upload", form, $("wpProgress")); toast("Imagen subida"); } catch (e) { toast("Error: " + e.message); }
+  custom = await api("/api/custom"); renderWalls();
+};
+$("wpList").onclick = async e => {
+  const b = e.target.closest("[data-wp]"); if (!b) return;
+  const r = await act(() => api("/api/custom/wallpaper/set", {path: b.dataset.wp}));
+  toast(r.applied === "now" ? "Fondo aplicado" : "Fondo guardado: se verá al entrar al modo escritorio");
+  custom = await api("/api/custom"); renderWalls();
+};
+loaders.custom = async () => { await loadCustom(); if (!$("thBrowse").innerHTML) browseThemes(false); };
+
 
 // --- Trucos ---------------------------------------------------------------------
 let cheatData = null;

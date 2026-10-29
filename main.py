@@ -161,7 +161,8 @@ class Plugin:
                 except OSError:
                     continue
                 images.append({"asset": img["asset"], "ext": img["ext"], "data": data})
-            out.append({"key": item["key"], "appid": item["appid"], "images": images})
+            out.append({"key": item["key"], "appid": item["appid"], "images": images,
+                        "reset": item.get("reset", [])})
         return out
 
     async def ack_art(self, key, error=None):

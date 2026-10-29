@@ -37,10 +37,12 @@ Objetivo: que DeckHub abarque la mayor parte de la configuración del Deck, desd
 
 ### Fase A · Personalización
 
-- [ ] **Videos de arranque**: subir `.webm` a `~/.steam/root/config/uioverrides/movies/` y elegirlos (Steam los lista en Ajustes → Personalización).
-- [ ] **Portadas de toda la biblioteca**: elegir entre varias opciones de SteamGridDB para cualquier juego (no solo accesos directos) con vista previa; restaurar la original.
-- [ ] **Temas (skins) del modo juego**: integración con CSS Loader / DeckThemes: explorar, instalar, activar y desactivar temas desde el panel.
-- [ ] **Fondos de pantalla**: escritorio KDE (`plasma-apply-wallpaperimage`) y fondo del modo juego mediante tema.
+- [x] **Videos de arranque**: subir `.webm` a `~/.steam/root/config/uioverrides/movies/` y elegirlos (Steam los lista en Ajustes → Personalización).
+- [x] **Portadas de toda la biblioteca**: elegir entre varias opciones de SteamGridDB para cualquier juego (no solo accesos directos) con vista previa; restaurar la original.
+- [x] **Temas (skins) del modo juego**: integración con CSS Loader / DeckThemes: explorar, instalar, activar y desactivar temas desde el panel.
+- [x] **Fondo de escritorio** KDE (`plasma-apply-wallpaperimage`, o en la configuración si estás en modo juego).
+- [ ] Fondo del modo juego con imagen propia (generando un tema de CSS Loader).
+- [ ] Recargar CSS Loader automáticamente tras instalar/activar un tema.
 
 ### Fase B · Sistema y rendimiento en el plugin
 

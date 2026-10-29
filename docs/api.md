@@ -61,6 +61,25 @@ El token está en `~/.config/deckhub/token` del Deck. Las rutas protegidas respo
 | POST | `/api/shortcuts/art/ack` | `{key, error?}` |
 | POST | `/api/shortcuts/art/refresh` | `{paths?}` (vacío = todas) |
 
+## Personalización
+
+| Método | Ruta | Cuerpo / query |
+|---|---|---|
+| GET | `/api/custom` | videos, fondos, temas instalados y estado de CSS Loader |
+| GET | `/api/custom/art/options` | `?appid=&kind=grid\|wide\|hero\|logo&title=&shortcut=1` |
+| POST | `/api/custom/art/apply` | `{appid, kind, url}` (solo URLs de SteamGridDB) |
+| POST | `/api/custom/art/reset` | `{appid, kinds?}` |
+| POST | `/api/custom/movies/upload` | multipart `.webm` |
+| POST | `/api/custom/movies/default` | `{name}` o `{name: null}` |
+| POST | `/api/custom/movies/delete` | `{name}` |
+| POST | `/api/custom/wallpaper/upload` | multipart imagen |
+| POST | `/api/custom/wallpaper/set` | `{path}` |
+| GET | `/api/custom/preview` | `?path=` (fondos y videos) |
+| GET | `/api/custom/themes/browse` | `?search=&target=&page=` |
+| POST | `/api/custom/themes/install` | `{id}` (DeckThemes) |
+| POST | `/api/custom/themes/toggle` | `{folder, active}` |
+| POST | `/api/custom/themes/remove` | `{folder}` |
+
 ## Ajustes, partidas y trucos
 
 | Método | Ruta | Cuerpo |

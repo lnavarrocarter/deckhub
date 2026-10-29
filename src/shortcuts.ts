@@ -21,6 +21,7 @@ type PendingArt = {
   key: string;
   appid: number;
   images: { asset: number; ext: string; data: string }[];
+  reset: number[]; // tipos de imagen a devolver a la original de Steam
 };
 
 const getPending = callable<[], Pending[]>("get_pending_shortcuts");
@@ -32,6 +33,9 @@ async function applyArt() {
   const items = await getPendingArt();
   for (const item of items) {
     try {
+      for (const asset of item.reset ?? []) {
+        await SteamClient.Apps.ClearCustomArtworkForApp(item.appid, asset);
+      }
       for (const img of item.images) {
         await SteamClient.Apps.SetCustomArtworkForApp(item.appid, img.data, img.ext, img.asset);
       }
