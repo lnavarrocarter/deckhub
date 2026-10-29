@@ -1,0 +1,21 @@
+# Dependencias y compilados
+node_modules/
+plugin/dist/
+plugin/out/
+__pycache__/
+*.pyc
+
+# Editor / sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Nunca subir datos del usuario
+*.keys
+*.nca
+*.xci
+*.nsp
+*.iso
+token
+config.json

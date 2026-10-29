@@ -1,0 +1,836 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DeckHub</title>
+<style>
+  :root {
+    --bg: #f4f5f7; --card: #ffffff; --text: #1b1f24; --muted: #66707c; --line: #e3e6ea;
+    --accent: #1a9fff; --ok: #22a06b; --warn: #d9822b; --bad: #d64545; --bar: #e8ebef; --hover: #eef1f4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #14171c; --card: #1d2128; --text: #e6e9ed; --muted: #8b95a1; --line: #2a3039; --bar: #2a3039; --hover: #252a32; }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+  header { display: flex; align-items: baseline; gap: 12px; padding-top: 18px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 20px; }
+  .sub { color: var(--muted); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); display: inline-block; margin-right: 6px; }
+  .dot.live { background: var(--ok); }
+  nav { display: flex; gap: 4px; margin: 14px 0 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
+  nav button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted); padding: 8px 12px; font: inherit; cursor: pointer; white-space: nowrap; }
+  nav button.on { color: var(--text); border-bottom-color: var(--accent); }
+  nav .badge { background: var(--accent); color: #fff; border-radius: 999px; padding: 0 6px; font-size: 11px; margin-left: 4px; }
+  section.tab { display: none; padding: 12px 0 40px; }
+  section.tab.on { display: block; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0; margin-bottom: 12px; }
+  .grid .card { margin-bottom: 0; }
+  .card.wide { grid-column: 1 / -1; }
+  .card h2 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+  .row { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; }
+  .row > span:first-child { color: var(--muted); }
+  .row > span:last-child { text-align: right; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .big { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .meter { height: 6px; background: var(--bar); border-radius: 3px; overflow: hidden; margin: 4px 0 8px; }
+  .meter > i { display: block; height: 100%; background: var(--accent); transition: width .4s; }
+  .meter.warn > i { background: var(--warn); } .meter.bad > i { background: var(--bad); }
+  .cores { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; height: 40px; align-items: end; margin: 6px 0 10px; }
+  .cores i { background: var(--accent); border-radius: 2px 2px 0 0; min-height: 2px; transition: height .4s; }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; border: 1px solid var(--line); margin: 2px 4px 2px 0; }
+  .pill.ok { color: var(--ok); border-color: currentColor; } .pill.bad { color: var(--bad); border-color: currentColor; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; color: var(--muted); font-weight: 500; font-size: 12px; padding: 4px 8px 6px 0; }
+  td { padding: 6px 8px 6px 0; border-top: 1px solid var(--line); vertical-align: middle; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.muted { color: var(--muted); }
+  tr.click { cursor: pointer; } tr.click:hover td { background: var(--hover); }
+  .scroll { max-height: 420px; overflow-y: auto; }
+  .err { color: var(--bad); }
+  button.b, a.b { font: inherit; padding: 5px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text); cursor: pointer; text-decoration: none; display: inline-block; }
+  button.b:hover, a.b:hover { border-color: var(--accent); }
+  button.b.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.b.danger { color: var(--bad); }
+  button.b:disabled { opacity: .45; cursor: default; }
+  .toolbar { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+  .toolbar .grow { flex: 1; }
+  input[type=text], input[type=search], input[type=password], select { font: inherit; padding: 5px 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text); min-width: 0; }
+  .crumbs { display: flex; flex-wrap: wrap; gap: 2px; align-items: center; margin-bottom: 8px; }
+  .crumbs a { color: var(--accent); cursor: pointer; padding: 2px 4px; border-radius: 4px; }
+  .crumbs a:hover { background: var(--hover); }
+  .tag { font-size: 11px; padding: 1px 6px; border-radius: 4px; background: var(--hover); color: var(--muted); white-space: nowrap; }
+  .tag.switch { color: #e4000f; } .tag.ps2 { color: #2d63c8; } .tag.update { color: var(--warn); } .tag.dlc { color: var(--ok); }
+  .clip { background: var(--hover); border-radius: 6px; padding: 6px 10px; margin-bottom: 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .barrow { position: relative; }
+  .barrow .bg { position: absolute; inset: 2px auto 2px 0; background: var(--accent); opacity: .14; border-radius: 3px; }
+  #toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 8px 14px; border-radius: 8px; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: calc(100% - 32px); }
+  #toast.on { opacity: .95; }
+  dialog { border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--text); max-width: 380px; width: calc(100% - 32px); }
+  dialog::backdrop { background: rgba(0,0,0,.4); }
+  dialog input { width: 100%; margin: 8px 0 12px; }
+  .name { overflow-wrap: anywhere; }
+  .drop { outline: 2px dashed var(--accent); outline-offset: -6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>DeckHub</h1>
+    <span class="sub" id="os">conectando…</span>
+    <span class="sub"><i class="dot" id="live"></i><span id="updated"></span></span>
+  </header>
+  <nav id="tabs">
+    <button data-tab="summary" class="on">Resumen</button>
+    <button data-tab="drives">Unidades y espacio</button>
+    <button data-tab="files">Archivos</button>
+    <button data-tab="games">Juegos</button>
+    <button data-tab="emulators">Emuladores</button>
+    <button data-tab="saves">Partidas</button>
+    <button data-tab="cheats">Trucos</button>
+    <button data-tab="packages">Paquetes</button>
+    <button data-tab="jobs">Tareas<span class="badge" id="jobsBadge" hidden></span></button>
+    <button data-tab="settings">Ajustes</button>
+  </nav>
+
+  <section class="tab on" id="tab-summary">
+    <div class="grid">
+      <div class="card"><h2>CPU</h2><div id="cpu"></div></div>
+      <div class="card"><h2>GPU y energía</h2><div id="gpu"></div></div>
+      <div class="card"><h2>Batería y pantalla</h2><div id="battery"></div></div>
+      <div class="card"><h2>Memoria</h2><div id="memory"></div></div>
+      <div class="card"><h2>Almacenamiento</h2><div id="storage"></div></div>
+      <div class="card"><h2>Red</h2><div id="network"></div></div>
+      <div class="card"><h2>Servicios</h2><div id="services"></div></div>
+      <div class="card wide"><h2>Steam</h2><div id="steam"></div></div>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-drives">
+    <div class="card"><h2>Unidades extraíbles</h2><div id="drives"></div></div>
+    <div class="card">
+      <h2>Análisis de espacio</h2>
+      <div class="toolbar"><select id="spaceRoot"></select><button class="b" id="spaceUp">Subir nivel</button><span class="sub grow" id="spacePath"></span></div>
+      <div id="space" class="scroll"></div>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-files">
+    <div class="card" id="filesCard">
+      <div class="toolbar">
+        <select id="fileRoot"></select>
+        <span class="grow"></span>
+        <label class="sub"><input type="checkbox" id="showHidden"> ocultos</label>
+        <button class="b" id="fMkdir">Nueva carpeta</button>
+        <button class="b" id="fUpload">Subir archivos</button>
+        <input type="file" id="fUploadInput" multiple hidden>
+      </div>
+      <div class="crumbs" id="crumbs"></div>
+      <div class="clip" id="clip" hidden></div>
+      <div class="toolbar" id="selBar" hidden>
+        <span class="sub" id="selCount"></span>
+        <button class="b" id="fRename">Renombrar</button>
+        <button class="b" id="fCopy">Copiar</button>
+        <button class="b" id="fCut">Mover</button>
+        <button class="b danger" id="fTrash">Enviar a la papelera</button>
+      </div>
+      <div id="uploads"></div>
+      <table><thead><tr><th style="width:28px"><input type="checkbox" id="selAll"></th><th>Nombre</th><th></th><th class="num">Tamaño</th><th class="num">Modificado</th><th></th></tr></thead><tbody id="fileList"></tbody></table>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-games">
+    <div class="card">
+      <div class="toolbar"><select id="gameConsole"></select><input type="search" id="gameFilter" placeholder="Buscar título" class="grow"><button class="b" id="gameRefresh">Volver a escanear</button></div>
+      <div id="gameSummary" class="toolbar"></div>
+      <div class="toolbar"><span class="sub grow" id="steamInfo"></span><button class="b primary" id="steamAddAll">Agregar los visibles a Steam</button></div>
+      <div class="scroll" style="max-height:none"><table><thead><tr><th>Título</th><th>Consola</th><th>Tipo</th><th>Versión</th><th class="num">Tamaño</th><th>Steam</th><th></th></tr></thead><tbody id="gameList"></tbody></table></div>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-emulators">
+    <div id="emuStale"></div>
+    <div class="grid" id="emuList"></div>
+  </section>
+
+  <section class="tab" id="tab-saves">
+    <div id="saveMigrate"></div>
+    <div id="saveList"></div>
+    <div class="card"><h2>Respaldos</h2>
+      <div class="toolbar"><label><input type="checkbox" id="bkDaily"> Respaldo automático diario</label>
+        <span class="sub">conservar</span><input type="text" id="bkKeep" style="width:50px"><span class="sub">automáticos por emulador</span><span class="grow"></span>
+        <span class="sub">Se guardan en ~/DeckHub/backups</span></div>
+      <div id="bkList"></div>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-cheats">
+    <div class="card">
+      <h2>PlayStation 2 · PCSX2</h2>
+      <p class="sub" style="margin-top:0">Pega el contenido de un archivo .pnach para el juego. DeckHub lo guarda como <code>&lt;serial&gt;_&lt;CRC&gt;.pnach</code> y activa los trucos en la configuración del juego.</p>
+      <div id="cheatPs2"></div>
+    </div>
+    <div class="card">
+      <h2>Nintendo Switch · Eden</h2>
+      <p class="sub" style="margin-top:0">Los trucos de Switch van por <em>Build ID</em> (el nombre del .txt, 16 caracteres hex). Debe coincidir con la versión del juego que tienes.</p>
+      <div id="cheatSwList"></div>
+      <form id="cheatSwForm" class="card" style="margin:10px 0 0">
+        <div class="toolbar"><select id="cswGame" class="grow"></select><input type="text" id="cswName" placeholder="Nombre (p. ej. Vida infinita)"><input type="text" id="cswBuild" placeholder="Build ID" style="width:180px"></div>
+        <textarea id="cswText" rows="6" style="width:100%;font:12px monospace;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px" placeholder="[Nombre del truco]&#10;04000000 0123ABCD 00000000"></textarea>
+        <div class="toolbar" style="margin:8px 0 0"><label class="b">Cargar .txt<input type="file" id="cswFile" accept=".txt" hidden></label><span class="grow"></span><button class="b primary">Guardar truco</button></div>
+      </form>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-settings">
+    <div class="card">
+      <h2>Portadas · SteamGridDB</h2>
+      <p class="sub" style="margin-top:0">Crea una clave gratis en steamgriddb.com → Preferencias → API. Se guarda solo en el Deck.</p>
+      <form class="toolbar" id="sgdbForm"><input type="password" id="sgdbKey" class="grow" autocomplete="off"><button class="b primary">Guardar clave</button></form>
+      <div class="toolbar"><label><input type="checkbox" id="autoArt"> Buscar portadas automáticamente al agregar juegos a Steam</label><span class="grow"></span><button class="b" id="artAll">Actualizar portadas de todos</button></div>
+      <p class="sub" id="sgdbStatus"></p>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-packages">
+    <div class="card"><h2>Instalados (Flatpak)</h2><div id="pkgList"></div></div>
+    <div class="card">
+      <h2>Buscar en Flathub</h2>
+      <form class="toolbar" id="pkgSearchForm"><input type="search" id="pkgQuery" placeholder="ej. retroarch, dolphin, ppsspp" class="grow"><button class="b primary">Buscar</button></form>
+      <div id="pkgResults"></div>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-jobs">
+    <div class="card"><h2>Tareas</h2><div id="jobList"></div></div>
+  </section>
+</div>
+
+<dialog id="tokenDlg">
+  <form method="dialog" id="tokenForm">
+    <strong>Token de DeckHub</strong>
+    <p class="sub" style="margin:6px 0 0">Las acciones que modifican el Deck piden el token. En el Deck: <code>cat ~/.config/deckhub/token</code></p>
+    <input type="password" id="tokenInput" autocomplete="off" required>
+    <div class="toolbar"><span class="grow err" id="tokenErr"></span><button class="b" type="button" onclick="this.closest('dialog').close()">Cancelar</button><button class="b primary" value="ok">Entrar</button></div>
+  </form>
+</dialog>
+<div id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "—").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const gb = b => b == null ? "—" : b >= 1e12 ? (b/1e12).toFixed(2)+" TB" : b >= 1e9 ? (b/1e9).toFixed(1)+" GB" : b >= 1e6 ? (b/1e6).toFixed(1)+" MB" : b >= 1e3 ? (b/1e3).toFixed(0)+" KB" : b+" B";
+const v = (x, unit = "") => x == null ? "—" : x + unit;
+const row = (k, val) => `<div class="row"><span>${esc(k)}</span><span>${val}</span></div>`;
+const meter = (pct, warn = 75, bad = 90) =>
+  `<div class="meter ${pct >= bad ? "bad" : pct >= warn ? "warn" : ""}"><i style="width:${Math.min(pct ?? 0, 100)}%"></i></div>`;
+const dur = s => { const d = Math.floor(s/86400), h = Math.floor(s%86400/3600), m = Math.floor(s%3600/60); return (d ? d+"d " : "") + h+"h "+m+"m"; };
+const date = t => new Date(t * 1000).toLocaleDateString(undefined, {year: "2-digit", month: "short", day: "numeric"});
+const toast = msg => { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("on"), 3500); };
+
+// --- API con token -----------------------------------------------------------
+let tokenPrompt = null;
+function askToken() {
+  if (tokenPrompt) return tokenPrompt;
+  tokenPrompt = new Promise(resolve => {
+    const dlg = $("tokenDlg"); $("tokenErr").textContent = ""; $("tokenInput").value = "";
+    dlg.showModal();
+    $("tokenForm").onsubmit = async ev => {
+      ev.preventDefault();
+      const r = await fetch("/api/auth", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({token: $("tokenInput").value.trim()})});
+      if (r.ok) { dlg.close(); resolve(true); } else $("tokenErr").textContent = "Token incorrecto";
+    };
+    $("tokenInput").onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); $("tokenForm").requestSubmit(); } };
+    dlg.onclose = () => { tokenPrompt = null; resolve(false); };
+  });
+  return tokenPrompt;
+}
+
+async function api(path, body) {
+  const opts = body === undefined ? {} : {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)};
+  let r = await fetch(path, opts);
+  if (r.status === 401 && await askToken()) r = await fetch(path, opts);
+  const d = await r.json().catch(() => ({error: `HTTP ${r.status}`}));
+  if (!r.ok || d.error) throw new Error(d.error || `HTTP ${r.status}`);
+  return d.data;
+}
+const act = async (fn, okMsg) => { try { const r = await fn(); if (okMsg) toast(okMsg); return r; } catch (e) { toast("Error: " + e.message); throw e; } };
+
+// --- Pestañas -----------------------------------------------------------------
+let tab = "summary";
+const loaders = {};
+$("tabs").onclick = e => {
+  const b = e.target.closest("button"); if (!b) return;
+  tab = b.dataset.tab;
+  document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x === b));
+  document.querySelectorAll("section.tab").forEach(s => s.classList.toggle("on", s.id === "tab-" + tab));
+  try { localStorage.setItem("deckhub.tab", tab); } catch {}
+  loaders[tab]?.();
+};
+
+// --- Resumen ------------------------------------------------------------------
+let summary = null;
+function renderSummary(d) {
+  const s = d.system, sv = d.services;
+  if (sv.os) $("os").textContent = `${sv.os.name} ${sv.os.version} · ${sv.os.model} · DeckHub ${d.version}`;
+  $("cpu").innerHTML = s.error ? `<p class="err">${esc(s.error)}</p>` :
+    `<div class="big">${s.cpu.percent}%</div>
+     <div class="cores">${s.cpu.per_core.map(p => `<i style="height:${Math.max(p, 3)}%" title="${p}%"></i>`).join("")}</div>
+     ${row("Frecuencia", `${v(s.cpu.mhz)} / ${v(s.cpu.max_mhz)} MHz`)}${row("Temperatura", v(s.cpu.temp, " °C"))}
+     ${row("Carga (1/5/15)", s.cpu.load.join(" · "))}${row("Ventilador", v(s.fan_rpm, " RPM"))}${row("Encendido", dur(s.uptime))}`;
+  if (!s.error) {
+    $("gpu").innerHTML = `<div class="big">${v(s.gpu.percent, "%")}</div>${meter(s.gpu.percent)}
+       ${row("Reloj", v(s.gpu.mhz, " MHz"))}${row("Temperatura", v(s.gpu.temp, " °C"))}${row("Consumo APU", v(s.gpu.watts, " W"))}
+       ${row("Límite TDP", s.tdp ? `${v(s.tdp.watts)} / ${v(s.tdp.max)} W` : "—")}${row("Modo rendimiento", esc(s.gpu.perf_level))}${row("Temp. placa", v(s.board_temp, " °C"))}`;
+    const b = s.battery;
+    $("battery").innerHTML = b ? `<div class="big">${v(b.percent, "%")}</div>${meter(100 - b.percent, 80, 90)}
+       ${row("Estado", esc(b.status))}${row("Potencia", v(b.watts, " W"))}${row("Voltaje", v(b.voltage, " V"))}
+       ${row("Salud", v(b.health, "%"))}${row("Ciclos", v(b.cycles))}${row("Brillo", v(s.brightness, "%"))}` : "Sin batería";
+    const m = s.memory;
+    $("memory").innerHTML = `<div class="big">${m.percent}%</div>${meter(m.percent)}${row("RAM", `${gb(m.used)} / ${gb(m.total)}`)}${row("Swap", `${gb(m.swap_used)} / ${gb(m.swap_total)}`)}`;
+  }
+  const st = d.storage;
+  $("storage").innerHTML = st.error ? `<p class="err">${esc(st.error)}</p>` :
+    st.mounts.map(mt => `${row(mt.mountpoint, `${gb(mt.used)} / ${gb(mt.total)}`)}${meter(mt.percent, 80, 90)}`).join("") +
+    Object.entries(st.nvme_temps).map(([k, t]) => row(`NVMe ${k}`, t + " °C")).join("");
+  const n = d.network;
+  $("network").innerHTML = n.error ? `<p class="err">${esc(n.error)}</p>` : row("Equipo", esc(n.hostname)) +
+    (n.wifi ? row("WiFi", `${esc(n.wifi.ssid)} · ${n.wifi.signal}%`) + row("Banda / velocidad", `${esc(n.wifi.freq)} · ${esc(n.wifi.rate)}`) : row("WiFi", "desconectado")) +
+    n.interfaces.map(i => row(i.name, `${i.ipv4.join(", ") || "sin IP"} · ↓${gb(i.rx)} ↑${gb(i.tx)}`)).join("") +
+    row("Bluetooth", n.bluetooth ? (n.bluetooth.powered ? `encendido · ${n.bluetooth.connected.length} conectados` : "apagado") : "—");
+  $("services").innerHTML = sv.error ? `<p class="err">${esc(sv.error)}</p>` :
+    `<div>${Object.entries(sv.units).map(([u, state]) => `<span class="pill ${state === "active" ? "ok" : "bad"}">${esc(u)}</span>`).join("")}</div>
+     ${row("Kernel", esc(sv.os.kernel))}${row("Decky", `${esc(sv.decky.version)} · ${sv.decky.plugins.length} plugins`)}${row("Flatpaks", sv.flatpaks.map(f => esc(f.name)).join(", "))}`;
+  const sm = d.steam;
+  $("steam").innerHTML = sm.error ? `<p class="err">${esc(sm.error)}</p>` :
+    row("Jugando ahora", sm.running ? esc(sm.running.name || "AppID " + sm.running.appid) : "nada") +
+    row("Juegos instalados", `${sm.games.length} · ${gb(sm.total_size)}`) +
+    sm.libraries.map(l => row("Biblioteca", `${esc(l.path)} · ${l.exists ? l.games + " juegos" : "no disponible"}`)).join("") +
+    `<div class="scroll"><table>${sm.games.map(g => `<tr><td>${esc(g.name)}</td><td class="num muted">${gb(g.size)}</td></tr>`).join("")}</table></div>`;
+}
+
+async function tick() {
+  try {
+    const r = await fetch("/api"); if (!r.ok) throw new Error(r.status);
+    summary = await r.json();
+    renderSummary(summary);
+    if (tab === "drives") renderDrives();
+    $("live").className = "dot live"; $("updated").textContent = "en vivo · " + new Date().toLocaleTimeString();
+  } catch { $("live").className = "dot"; $("updated").textContent = "sin conexión con el Deck"; }
+}
+
+// --- Unidades y espacio -------------------------------------------------------
+function renderDrives() {
+  if (!summary) return;
+  const parts = summary.storage.disks.filter(d => d.removable).flatMap(d => d.partitions.map(p => ({...p, disk: d})));
+  $("drives").innerHTML = !parts.length ? `<p class="sub">No hay tarjetas SD ni unidades USB conectadas.</p>` :
+    `<table><thead><tr><th>Partición</th><th>Formato</th><th class="num">Tamaño</th><th class="num">Usado</th><th>Montaje</th><th>Al iniciar</th><th></th></tr></thead><tbody>${
+    parts.map(p => `<tr>
+      <td><strong>${esc(p.label || p.name)}</strong> <span class="sub">${esc(p.path)}</span></td>
+      <td>${esc(p.fstype)}</td><td class="num">${gb(p.size)}</td>
+      <td class="num">${p.used != null ? gb(p.used) + " · " + Math.round(p.used * 100 / p.size) + "%" : "—"}</td>
+      <td class="muted">${p.mountpoint ? esc(p.mountpoint) : "sin montar"}</td>
+      <td>${p.mountable && p.uuid ? `<label><input type="checkbox" data-auto="${esc(p.uuid)}" ${p.automount ? "checked" : ""}> montar</label>` : ""}</td>
+      <td class="num">${!p.mountable ? "" : p.mountpoint
+        ? `<button class="b" data-open="${esc(p.mountpoint)}">Abrir</button> <button class="b" data-unmount="${esc(p.path)}">Desmontar</button>`
+        : `<button class="b primary" data-mount="${esc(p.path)}">Montar</button>`}</td></tr>`).join("")}</tbody></table>`;
+}
+$("drives").onclick = async e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.open) { openFiles(b.dataset.open); return; }
+  b.disabled = true;
+  try {
+    if (b.dataset.mount) await act(() => api("/api/drives/mount", {device: b.dataset.mount}), "Unidad montada");
+    if (b.dataset.unmount) await act(() => api("/api/drives/unmount", {device: b.dataset.unmount}), "Unidad desmontada");
+  } finally { b.disabled = false; tick(); fillRoots(); }
+};
+$("drives").onchange = async e => {
+  const c = e.target; if (!c.dataset.auto) return;
+  try { await act(() => api("/api/drives/automount", {uuid: c.dataset.auto, enabled: c.checked}),
+                  c.checked ? "Se montará automáticamente" : "Montaje automático desactivado"); }
+  catch { c.checked = !c.checked; }
+};
+
+let spacePath = null, roots = [];
+async function fillRoots() {
+  try { roots = await api("/api/files/roots"); } catch { return; }
+  for (const sel of [$("spaceRoot"), $("fileRoot")]) {
+    const cur = sel.value;
+    sel.innerHTML = roots.map(r => `<option value="${esc(r.path)}">${esc(r.name)}</option>`).join("");
+    if (roots.some(r => r.path === cur)) sel.value = cur;
+  }
+}
+async function loadSpace(path) {
+  spacePath = path; $("spacePath").textContent = path;
+  $("space").innerHTML = `<p class="sub">Calculando… (la primera vez puede tardar)</p>`;
+  try {
+    const d = await api("/api/space?path=" + encodeURIComponent(path));
+    const max = d.items[0]?.size || 1;
+    $("space").innerHTML = `<p class="sub">Total: ${gb(d.total)}</p><table>${d.items.map(i =>
+      `<tr class="${i.file ? "" : "click"} barrow" data-path="${esc(i.path)}"><td class="name" style="position:relative"><span class="bg" style="width:${(i.size / max * 100).toFixed(1)}%"></span>${i.file ? "📄" : "📁"} ${esc(i.name)}</td><td class="num">${gb(i.size)}</td></tr>`).join("")}</table>`;
+  } catch (e) { $("space").innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+}
+$("space").onclick = e => { const tr = e.target.closest("tr.click"); if (tr) loadSpace(tr.dataset.path); };
+$("spaceRoot").onchange = () => loadSpace($("spaceRoot").value);
+$("spaceUp").onclick = () => {
+  if (!spacePath || roots.some(r => r.path === spacePath)) return;
+  loadSpace(spacePath.replace(/\/[^/]+$/, "") || "/");
+};
+loaders.drives = async () => { renderDrives(); await fillRoots(); if (!spacePath) loadSpace($("spaceRoot").value); };
+
+// --- Archivos -----------------------------------------------------------------
+let cwd = null, listing = null, clipboard = null;
+const selected = () => [...document.querySelectorAll("#fileList input[type=checkbox]:checked")].map(c => c.dataset.path);
+const join = (dir, name) => dir.replace(/\/$/, "") + "/" + name;
+
+function openFiles(path) { document.querySelector('#tabs button[data-tab="files"]').click(); loadDir(path); }
+
+async function loadDir(path) {
+  try { listing = await api(`/api/files/list?path=${encodeURIComponent(path)}&hidden=${$("showHidden").checked ? 1 : 0}`); }
+  catch (e) { $("fileList").innerHTML = `<tr><td colspan="6" class="err">${esc(e.message)}</td></tr>`; return; }
+  cwd = listing.path;
+  const root = roots.find(r => cwd === r.path || cwd.startsWith(r.path + "/"));
+  if (root) $("fileRoot").value = root.path;
+  const rel = root ? cwd.slice(root.path.length).split("/").filter(Boolean) : [];
+  let acc = root?.path ?? "";
+  $("crumbs").innerHTML = `<a data-path="${esc(acc)}">${esc(root?.name ?? cwd)}</a>` +
+    rel.map(p => { acc += "/" + p; return ` / <a data-path="${esc(acc)}">${esc(p)}</a>`; }).join("");
+  $("fileList").innerHTML = (listing.parent ? `<tr class="click" data-dir="${esc(listing.parent)}"><td></td><td>⬆️ ..</td><td></td><td></td><td></td><td></td></tr>` : "") +
+    (listing.entries.length ? "" : `<tr><td></td><td class="sub" colspan="5">Carpeta vacía</td></tr>`) +
+    listing.entries.map(e => {
+      const p = join(cwd, e.name), g = e.game;
+      return `<tr class="${e.dir ? "click" : ""}" ${e.dir ? `data-dir="${esc(p)}"` : ""}>
+        <td><input type="checkbox" data-path="${esc(p)}"></td>
+        <td class="name">${e.dir ? "📁" : "📄"} ${esc(e.name)}</td>
+        <td>${g ? `<span class="tag ${esc(g.console)}">${esc(g.console_name)}</span>${g.kind && g.kind !== "base" ? ` <span class="tag ${esc(g.kind)}">${g.kind === "update" ? "actualización" : "DLC"}</span>` : ""}` : ""}</td>
+        <td class="num muted">${e.dir ? "" : gb(e.size)}</td><td class="num muted">${date(e.mtime)}</td>
+        <td class="num">${e.dir ? "" : `<a class="b" href="/api/files/download?path=${encodeURIComponent(p)}" title="Descargar">⬇</a>`}</td></tr>`;
+    }).join("");
+  $("selAll").checked = false; updateSel();
+}
+
+function updateSel() {
+  const n = selected().length;
+  $("selBar").hidden = !n; $("selCount").textContent = `${n} seleccionado${n > 1 ? "s" : ""}`;
+  $("fRename").disabled = n !== 1;
+}
+function renderClip() {
+  $("clip").hidden = !clipboard;
+  if (!clipboard) return;
+  const names = clipboard.paths.map(p => p.split("/").pop());
+  $("clip").innerHTML = `<span>${clipboard.move ? "Mover" : "Copiar"}: <strong>${esc(names.slice(0, 3).join(", "))}</strong>${names.length > 3 ? ` y ${names.length - 3} más` : ""}</span>
+    <span class="grow"></span><button class="b primary" id="fPaste">Pegar aquí</button><button class="b" id="fClipCancel">Cancelar</button>`;
+  $("fPaste").onclick = async () => {
+    const c = clipboard;
+    await act(() => api(c.move ? "/api/files/move" : "/api/files/copy", {paths: c.paths, dest: cwd}), "Tarea iniciada · mira la pestaña Tareas");
+    clipboard = null; renderClip(); pollJobs(); setTimeout(() => loadDir(cwd), 800);
+  };
+  $("fClipCancel").onclick = () => { clipboard = null; renderClip(); };
+}
+
+$("fileList").onclick = e => {
+  if (e.target.matches("input, a")) return;
+  const tr = e.target.closest("tr[data-dir]"); if (tr) loadDir(tr.dataset.dir);
+};
+$("fileList").onchange = updateSel;
+$("selAll").onchange = e => { document.querySelectorAll("#fileList input[type=checkbox]").forEach(c => c.checked = e.target.checked); updateSel(); };
+$("crumbs").onclick = e => { const a = e.target.closest("a"); if (a) loadDir(a.dataset.path); };
+$("fileRoot").onchange = () => loadDir($("fileRoot").value);
+$("showHidden").onchange = () => cwd && loadDir(cwd);
+$("fMkdir").onclick = async () => {
+  const name = prompt("Nombre de la nueva carpeta"); if (!name) return;
+  await act(() => api("/api/files/mkdir", {path: cwd, name}), "Carpeta creada"); loadDir(cwd);
+};
+$("fRename").onclick = async () => {
+  const p = selected()[0], old = p.split("/").pop();
+  const name = prompt("Nuevo nombre", old); if (!name || name === old) return;
+  await act(() => api("/api/files/rename", {path: p, name}), "Renombrado"); loadDir(cwd);
+};
+$("fCopy").onclick = () => { clipboard = {paths: selected(), move: false}; renderClip(); toast("Ve a la carpeta de destino y pulsa Pegar aquí"); };
+$("fCut").onclick = () => { clipboard = {paths: selected(), move: true}; renderClip(); toast("Ve a la carpeta de destino y pulsa Pegar aquí"); };
+$("fTrash").onclick = async () => {
+  const s = selected();
+  if (!confirm(`¿Enviar ${s.length} elemento(s) a la papelera?\n\n${s.map(p => p.split("/").pop()).slice(0, 8).join("\n")}`)) return;
+  await act(() => api("/api/files/trash", {paths: s}), "Enviado a la papelera"); loadDir(cwd);
+};
+
+// Subidas con progreso (XHR permite seguir el avance de archivos grandes).
+function upload(files) {
+  for (const f of files) {
+    const id = "up" + Math.random().toString(36).slice(2), dest = cwd;
+    $("uploads").insertAdjacentHTML("beforeend", `<div id="${id}">${row("⬆ " + f.name, "0%")}${meter(0)}</div>`);
+    const send = () => {
+      const xhr = new XMLHttpRequest(), fd = new FormData(); fd.append("file", f, f.name);
+      xhr.open("POST", "/api/files/upload?dir=" + encodeURIComponent(dest));
+      xhr.upload.onprogress = e => { const pct = Math.round(e.loaded * 100 / e.total);
+        $(id).innerHTML = row("⬆ " + f.name, `${pct}% · ${gb(e.loaded)} / ${gb(e.total)}`) + meter(pct, 101, 101); };
+      xhr.onload = async () => {
+        if (xhr.status === 401 && await askToken()) return send();
+        if (xhr.status !== 200) toast("Error al subir " + f.name);
+        $(id).remove(); if (cwd === dest) loadDir(cwd);
+      };
+      xhr.onerror = () => { toast("Error de red al subir " + f.name); $(id).remove(); };
+      xhr.send(fd);
+    };
+    send();
+  }
+}
+$("fUpload").onclick = () => $("fUploadInput").click();
+$("fUploadInput").onchange = e => { upload(e.target.files); e.target.value = ""; };
+const card = $("filesCard");
+card.ondragover = e => { e.preventDefault(); card.classList.add("drop"); };
+card.ondragleave = e => { if (!card.contains(e.relatedTarget)) card.classList.remove("drop"); };
+card.ondrop = e => { e.preventDefault(); card.classList.remove("drop"); if (cwd && e.dataTransfer.files.length) upload(e.dataTransfer.files); };
+loaders.files = async () => { await fillRoots(); if (!cwd) loadDir($("fileRoot").value); renderClip(); };
+
+// --- Juegos -------------------------------------------------------------------
+let games = null, steam = {shortcuts: {}, supported: {}}, steamTimer = null;
+async function loadSteam() {
+  try { steam = await api("/api/shortcuts"); } catch { return; }
+  const vals = Object.values(steam.shortcuts);
+  const pend = vals.filter(s => s.status.startsWith("pending") || ["wanted", "ready"].includes(s.art?.status)).length;
+  $("steamInfo").textContent = `${vals.filter(s => s.status === "added").length} juegos en Steam` +
+    (pend ? ` · ${pend} pendientes (los aplica el plugin dentro de Steam en unos segundos)` : "") +
+    ` · Consolas con emulador: ${Object.values(steam.supported).length ? Object.entries(steam.supported).map(([c, e]) => e).filter((e, i, a) => a.indexOf(e) === i).join(", ") : "ninguna"}`;
+  renderGames();
+  clearTimeout(steamTimer);
+  if (pend && tab === "games") steamTimer = setTimeout(loadSteam, 2500);
+}
+async function loadGames(refresh) {
+  $("gameList").innerHTML = `<tr><td colspan="7" class="sub">Escaneando…</td></tr>`;
+  try { games = await api("/api/roms" + (refresh ? "?refresh=1" : "")); } catch (e) { $("gameList").innerHTML = `<tr><td colspan="7" class="err">${esc(e.message)}</td></tr>`; return; }
+  const cur = $("gameConsole").value;
+  $("gameConsole").innerHTML = `<option value="">Todas las consolas</option>` + games.consoles.map(c => `<option value="${esc(c.console)}">${esc(c.name)} (${c.count})</option>`).join("");
+  $("gameConsole").value = cur;
+  $("gameSummary").innerHTML = games.consoles.map(c => `<span class="pill">${esc(c.name)}: ${c.count} · ${gb(c.size)}</span>`).join("") || `<span class="sub">No se encontraron juegos en las unidades montadas.</span>`;
+  renderGames();
+}
+const steamable = g => (!g.kind || g.kind === "base") && steam.supported[g.console];
+function visibleGames() {
+  const con = $("gameConsole").value, q = $("gameFilter").value.toLowerCase();
+  return games.games.filter(g => (!con || g.console === con) && (!q || g.title.toLowerCase().includes(q) || g.file.toLowerCase().includes(q)));
+}
+function steamCell(g) {
+  const s = steam.shortcuts[g.path];
+  if (s?.status === "added") {
+    const art = {wanted: "buscando portada…", ready: "aplicando portada…", applied: "", error: "sin portada"}[s.art?.status] ?? "";
+    return `<span class="pill ok">en Steam</span> <button class="b" data-steam-remove="${esc(g.path)}" title="Quitar de Steam">✕</button>` +
+      (art ? `<br><span class="sub ${s.art?.status === "error" ? "err" : ""}" title="${esc(s.art?.error ?? "")}">${art}</span>` : "");
+  }
+  if (s?.status === "pending_add") return `<span class="pill">agregando…</span>`;
+  if (s?.status === "pending_remove") return `<span class="pill">quitando…</span>`;
+  const retry = s?.status === "error" ? `<span class="err sub" title="${esc(s.error)}">error</span> ` : "";
+  return steamable(g) ? `${retry}<button class="b" data-steam-add="${esc(g.path)}">Agregar</button>` : "";
+}
+function renderGames() {
+  if (!games) return;
+  const list = visibleGames();
+  const kinds = {base: "Juego", update: "Actualización", dlc: "DLC"};
+  $("gameList").innerHTML = list.map(g => `<tr>
+    <td class="name" title="${esc(g.file)}">${esc(g.title)}${g.title_id ? `<br><span class="sub">${esc(g.title_id)}</span>` : ""}
+      ${g.updates?.length || g.dlc?.length ? `<br>${g.latest_update ? `<span class="tag update">+ ${esc(g.latest_update)}</span> ` : ""}${g.dlc.length ? `<span class="tag dlc">+ ${g.dlc.length} DLC</span>` : ""}
+        ${g.stale_updates?.length ? `<span class="sub" title="Solo cuenta la actualización más nueva">· ${g.stale_updates.length} actualización(es) vieja(s) sobran</span>` : ""}` : ""}
+      ${g.orphan ? `<br><span class="err sub">no está el juego base</span>` : ""}</td>
+    <td><span class="tag ${esc(g.console)}">${esc(g.console_name)}</span></td>
+    <td>${g.kind ? `<span class="tag ${esc(g.kind)}">${kinds[g.kind]}</span>` : ""}</td>
+    <td class="muted">${esc(g.version ?? "")}</td><td class="num">${gb(g.size)}</td>
+    <td style="white-space:nowrap">${steamCell(g)}</td>
+    <td class="num"><button class="b" data-show="${esc(g.path)}">Ver</button></td></tr>`).join("") || `<tr><td colspan="7" class="sub">Sin resultados</td></tr>`;
+  const n = list.filter(g => steamable(g) && !["added", "pending_add"].includes(steam.shortcuts[g.path]?.status)).length;
+  $("steamAddAll").disabled = !n;
+  $("steamAddAll").textContent = n ? `Agregar ${n} visibles a Steam` : "Todo lo visible ya está en Steam";
+}
+async function steamAdd(paths) {
+  const r = await act(() => api("/api/shortcuts/add", {paths}));
+  toast(`${r.queued} en cola para Steam` + (r.skipped.length ? ` · ${r.skipped.length} omitidos` : ""));
+  loadSteam();
+}
+$("gameConsole").onchange = renderGames;
+$("gameFilter").oninput = renderGames;
+$("gameRefresh").onclick = () => loadGames(true);
+$("steamAddAll").onclick = () => {
+  const paths = visibleGames().filter(g => steamable(g) && !["added", "pending_add"].includes(steam.shortcuts[g.path]?.status)).map(g => g.path);
+  if (paths.length > 1 && !confirm(`¿Agregar ${paths.length} juegos a tu biblioteca de Steam?`)) return;
+  steamAdd(paths);
+};
+$("gameList").onclick = async e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.show) openFiles(b.dataset.show.replace(/\/[^/]+$/, ""));
+  if (b.dataset.steamAdd) steamAdd([b.dataset.steamAdd]);
+  if (b.dataset.steamRemove) { await act(() => api("/api/shortcuts/remove", {paths: [b.dataset.steamRemove]}), "Se quitará de Steam"); loadSteam(); }
+};
+loaders.games = async () => { if (!games) await loadGames(); await loadSteam(); };
+
+// --- Emuladores ---------------------------------------------------------------
+async function loadEmulators() {
+  let d;
+  try { d = await api("/api/emulators"); } catch (e) { $("emuList").innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
+  $("emuStale").innerHTML = d.discontinued.map(s =>
+    `<div class="card"><strong>${esc(s.name)}</strong> <span class="sub">· ${esc(s.reason)}</span>
+     <button class="b danger" style="float:right" data-uninstall="${esc(s.id)}" data-name="${esc(s.name)}">Desinstalar</button></div>`).join("");
+  // Primero los que tienen juegos o están instalados.
+  const list = [...d.emulators].sort((a, b) => (b.games > 0) - (a.games > 0) || b.installed - a.installed);
+  $("emuList").innerHTML = list.map(e => {
+    const state = !e.installed ? `<span class="pill">no instalado</span>`
+      : e.configured === false || !e.access ? `<span class="pill bad">falta configurar</span>`
+      : `<span class="pill ok">listo</span>`;
+    const actions = !e.installed
+      ? `<button class="b primary" data-emu-install="${esc(e.id)}">Instalar${e.auto_config ? " y configurar" : ""}</button>`
+      : `<button class="b" data-emu-config="${esc(e.id)}">${e.configured && e.access ? "Reconfigurar" : "Configurar"}</button>`;
+    return `<div class="card">
+      <h2>${esc(e.console_names.slice(0, 4).join(" · "))}${e.console_names.length > 4 ? " …" : ""}</h2>
+      <div class="toolbar"><span class="big" style="font-size:20px">${esc(e.name)}</span><span class="grow"></span>${state}</div>
+      ${row("Juegos detectados", e.games)}
+      ${e.installed ? row("Versión", `${esc(e.version)} · ${gb(e.size)}`) + row("Acceso a la microSD", e.access ? "sí (solo lectura)" : "no") : ""}
+      ${e.rom_dirs ? row("Carpetas de juegos", e.rom_dirs.map(esc).join("<br>") || "—") : ""}
+      ${e.bios !== undefined ? row("BIOS", e.bios_file ? esc(e.bios_file) : "no encontrada") : ""}
+      ${e.keys !== undefined ? row("Llaves", e.keys ? "sí" : "no") + row("Firmware", e.firmware
+        ? `sí · ${e.firmware_info.files} archivos · ${dt(e.firmware_info.installed)}` : "no") : ""}
+      ${e.installed && !e.auto_config ? `<p class="sub">Solo se da acceso a la microSD; la carpeta de juegos se elige dentro del emulador.</p>` : ""}
+      ${e.warnings.map(w => `<p class="err sub" style="margin:6px 0">⚠ ${esc(w)}</p>`).join("")}
+      <div class="toolbar" style="margin:8px 0 0">${actions}
+        ${e.id === "dev.eden_emu.eden" && e.installed ? `<button class="b" data-fw-upload>Instalar firmware (.zip)</button>
+          <button class="b" data-fw-path>Desde una ruta del Deck</button><button class="b" data-keys>Actualizar llaves</button>` : ""}</div>
+      <div id="fwProgress-${esc(e.id).replace(/\W/g, "")}"></div></div>`;
+  }).join("");
+}
+// Sube un archivo con progreso; reintenta tras pedir el token si hace falta.
+function uploadTo(url, form, progressEl) {
+  return new Promise((resolve, reject) => {
+    const send = () => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", url);
+      xhr.upload.onprogress = ev => { const pct = Math.round(ev.loaded * 100 / ev.total);
+        progressEl.innerHTML = row("Subiendo", `${pct}% · ${gb(ev.loaded)} / ${gb(ev.total)}`) + meter(pct, 101, 101); };
+      xhr.onload = async () => {
+        if (xhr.status === 401 && await askToken()) return send();
+        progressEl.innerHTML = "";
+        const d = JSON.parse(xhr.responseText || "{}");
+        xhr.status === 200 && !d.error ? resolve(d.data) : reject(new Error(d.error || `HTTP ${xhr.status}`));
+      };
+      xhr.onerror = () => { progressEl.innerHTML = ""; reject(new Error("error de red")); };
+      xhr.send(form);
+    };
+    send();
+  });
+}
+const pickFiles = (accept, multiple) => new Promise(resolve => {
+  const i = document.createElement("input"); i.type = "file"; i.accept = accept; i.multiple = multiple;
+  i.onchange = () => resolve([...i.files]); i.click();
+});
+const FW_NOTE = "El firmware tiene que venir de tu propia consola, y tus llaves (prod.keys) deben ser de esa versión o más nueva.\nEl firmware actual de Eden irá a la papelera.";
+
+$("emuList").addEventListener("click", async e => {
+  const b = e.target.closest("button[data-fw-upload], button[data-fw-path], button[data-keys]"); if (!b) return;
+  e.stopImmediatePropagation();
+  const prog = $("fwProgress-deveden_emueden");
+  try {
+    if (b.dataset.fwUpload !== undefined) {
+      const [f] = await pickFiles(".zip", false); if (!f) return;
+      if (!confirm(`¿Instalar el firmware de «${f.name}» (${gb(f.size)}) en Eden?\n\n${FW_NOTE}`)) return;
+      const fd = new FormData(); fd.append("file", f, f.name);
+      await uploadTo("/api/emulators/eden/firmware", fd, prog);
+      toast("Firmware subido · instalando (mira Tareas)"); pollJobs();
+    } else if (b.dataset.fwPath !== undefined) {
+      const path = prompt("Ruta en el Deck del .zip o de la carpeta con los .nca\n(p. ej. /run/media/deck/RomsSwitch/firmware.zip)"); if (!path) return;
+      if (!confirm(`¿Instalar el firmware de ${path} en Eden?\n\n${FW_NOTE}`)) return;
+      await act(() => api("/api/emulators/eden/firmware", {path}), "Instalando firmware · mira Tareas"); pollJobs();
+    } else {
+      const files = await pickFiles(".keys", true); if (!files.length) return;
+      if (!files.some(f => f.name.toLowerCase() === "prod.keys")) { toast("Elige al menos prod.keys (y si quieres title.keys)"); return; }
+      const fd = new FormData(); files.forEach(f => fd.append(f.name, f, f.name));
+      await uploadTo("/api/emulators/eden/keys", fd, prog);
+      toast("Llaves actualizadas (las anteriores están en la papelera)"); loadEmulators();
+    }
+  } catch (err) { toast("Error: " + err.message); }
+}, true);
+
+$("emuList").onclick = async e => {
+  const b = e.target.closest("button"); if (!b) return;
+  b.disabled = true;
+  try {
+    if (b.dataset.emuInstall) await act(() => api("/api/emulators/install", {id: b.dataset.emuInstall}), "Instalando · mira la pestaña Tareas");
+    if (b.dataset.emuConfig) await act(() => api("/api/emulators/configure", {id: b.dataset.emuConfig}), "Configurando…");
+    pollJobs();
+  } catch { b.disabled = false; }
+};
+$("emuStale").onclick = async e => {
+  const b = e.target.closest("button[data-uninstall]"); if (!b) return;
+  if (!confirm(`¿Desinstalar ${b.dataset.name}?\nSus datos (~/.var/app) se conservan.`)) return;
+  await act(() => api("/api/packages/uninstall", {id: b.dataset.uninstall}), "Desinstalando · mira la pestaña Tareas"); pollJobs();
+};
+loaders.emulators = loadEmulators;
+
+// --- Partidas guardadas -------------------------------------------------------
+const dt = t => new Date(t * 1000).toLocaleString(undefined, {dateStyle: "short", timeStyle: "short"});
+async function loadSaves() {
+  let d;
+  try { d = await api("/api/saves"); } catch (e) { $("saveList").innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
+  $("saveMigrate").innerHTML = d.can_migrate ? `<div class="card"><strong>Tienes partidas de yuzu.</strong>
+    <span class="sub">Cópialas a Eden para seguir donde ibas (antes se respalda lo que tenga Eden).</span>
+    <button class="b primary" style="float:right" id="doMigrate">Migrar a Eden</button></div>` : "";
+  $("saveList").innerHTML = Object.entries(d.emulators).map(([key, e]) => `<div class="card">
+    <div class="toolbar"><h2 style="margin:0">${esc(e.name)}</h2><span class="sub">${e.saves.length} · ${gb(e.total)}</span>
+      ${e.running ? `<span class="pill bad">abierto</span>` : ""}<span class="grow"></span>
+      ${e.saves.length ? `<button class="b" data-backup="${key}">Respaldar todo</button>` : ""}</div>
+    ${e.saves.length ? `<table>${e.saves.map(s => `<tr><td class="name">${esc(s.title)}${s.title_id && s.title !== s.title_id ? ` <span class="sub">${esc(s.title_id)}</span>` : ""}
+      ${s.kind === "savestate" ? ` <span class="tag">estado guardado</span>` : s.kind === "memcard" ? ` <span class="tag">memory card</span>` : ""}</td>
+      <td class="num muted">${gb(s.size)}</td><td class="num muted">${dt(s.mtime)}</td>
+      <td class="num">${key !== "pcsx2" ? `<button class="b" data-backup="${key}" data-only="${esc(s.id)}">Respaldar</button>` : ""}</td></tr>`).join("")}</table>`
+      : `<p class="sub">Sin partidas todavía.</p>`}</div>`).join("");
+  $("bkDaily").checked = d.settings.daily; $("bkKeep").value = d.settings.keep;
+  $("bkList").innerHTML = d.backups.length ? `<table>${d.backups.map(b => `<tr><td class="name">${esc(b.name)}</td>
+    <td><span class="tag">${esc(b.emulator)}</span></td><td class="num muted">${gb(b.size)}</td><td class="num muted">${dt(b.mtime)}</td>
+    <td class="num"><a class="b" href="/api/files/download?path=${encodeURIComponent(b.path)}" title="Descargar">⬇</a>
+    <button class="b" data-restore="${esc(b.name)}" data-emu="${esc(b.emulator)}">Restaurar</button></td></tr>`).join("")}</table>`
+    : `<p class="sub">Aún no hay respaldos.</p>`;
+}
+$("tab-saves").onclick = async e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.id === "doMigrate") {
+    if (!confirm("¿Copiar las partidas y el perfil de yuzu a Eden?")) return;
+    await act(() => api("/api/saves/migrate", {}), "Migrando · mira la pestaña Tareas");
+  } else if (b.dataset.backup) {
+    await act(() => api("/api/saves/backup", {emulator: b.dataset.backup, only: b.dataset.only}), "Respaldando…");
+  } else if (b.dataset.restore) {
+    if (!confirm(`¿Restaurar ${b.dataset.restore}?\nSe sobrescriben las partidas actuales (antes se hace un respaldo automático).`)) return;
+    await act(() => api("/api/saves/restore", {name: b.dataset.restore, emulator: b.dataset.emu}), "Restaurando…");
+  } else return;
+  pollJobs();
+};
+$("bkDaily").onchange = () => act(() => api("/api/settings", {backup_daily: $("bkDaily").checked}), "Guardado");
+$("bkKeep").onchange = () => act(() => api("/api/settings", {backup_keep: +$("bkKeep").value || 10}), "Guardado");
+loaders.saves = loadSaves;
+
+// --- Trucos ---------------------------------------------------------------------
+let cheatData = null;
+async function loadCheats() {
+  try { cheatData = await api("/api/cheats"); } catch (e) { $("cheatPs2").innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
+  $("cheatPs2").innerHTML = cheatData.ps2.map((g, i) => `<details style="border-top:1px solid var(--line);padding:6px 0">
+    <summary style="cursor:pointer"><strong>${esc(g.title)}</strong> <span class="sub">${esc(g.serial ?? "")} ${g.crc ? "· " + esc(g.crc) : ""}</span>
+      ${g.cheats ? (g.enabled ? `<span class="pill ok">activos</span>` : `<span class="pill">desactivados</span>`) : ""}
+      ${g.groups.length ? `<span class="sub">${g.groups.length} trucos</span>` : ""}${g.error ? `<span class="err sub"> ${esc(g.error)}</span>` : ""}</summary>
+    ${g.serial && g.crc ? `<textarea data-ps2text="${i}" rows="8" style="width:100%;font:12px monospace;margin-top:6px;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px" placeholder="[Vida infinita]&#10;patch=1,EE,2012F2B0,extended,00000000">${esc(g.cheats ?? "").replace(/^—$/, "")}</textarea>
+    <div class="toolbar"><button class="b primary" data-ps2save="${i}">Guardar y activar</button>
+      ${g.cheats ? `<button class="b" data-ps2toggle="${i}">${g.enabled ? "Desactivar" : "Activar"}</button><button class="b danger" data-ps2del="${i}">Quitar</button>` : ""}</div>` : ""}
+  </details>`).join("") || `<p class="sub">No hay juegos de PS2 en .iso.</p>`;
+  const sw = cheatData.switch;
+  $("cswGame").innerHTML = sw.games.map(g => `<option value="${esc(g.title_id)}">${esc(g.title)} (${esc(g.title_id)})</option>`).join("");
+  $("cheatSwList").innerHTML = sw.cheats.length ? `<table>${sw.cheats.map((c, i) => `<tr><td class="name"><strong>${esc(c.title)}</strong> · ${esc(c.name)}<br><span class="sub">Build ${esc(c.build_id)}</span></td>
+    <td>${c.enabled ? `<span class="pill ok">activo</span>` : `<span class="pill">desactivado</span>`}</td>
+    <td class="num"><button class="b" data-swtoggle="${i}">${c.enabled ? "Desactivar" : "Activar"}</button> <button class="b danger" data-swdel="${i}">Quitar</button></td></tr>`).join("")}</table>`
+    : `<p class="sub">Sin trucos de Switch todavía.</p>`;
+}
+$("tab-cheats").onclick = async e => {
+  const b = e.target.closest("button"); if (!b || b.form) return;
+  const ps2 = i => cheatData.ps2[+i], sw = i => cheatData.switch.cheats[+i];
+  try {
+    if (b.dataset.ps2save) await act(() => api("/api/cheats/ps2/save", {path: ps2(b.dataset.ps2save).path, text: document.querySelector(`[data-ps2text="${b.dataset.ps2save}"]`).value}), "Trucos guardados y activados");
+    else if (b.dataset.ps2toggle) { const g = ps2(b.dataset.ps2toggle); await act(() => api("/api/cheats/ps2/toggle", {path: g.path, enabled: !g.enabled}), "Listo"); }
+    else if (b.dataset.ps2del) { if (!confirm("¿Quitar los trucos de este juego? (van a la papelera)")) return; await act(() => api("/api/cheats/ps2/delete", {path: ps2(b.dataset.ps2del).path}), "Quitados"); }
+    else if (b.dataset.swtoggle) { const c = sw(b.dataset.swtoggle); await act(() => api("/api/cheats/eden/toggle", {title_id: c.title_id, name: c.name, enabled: !c.enabled}), "Listo"); }
+    else if (b.dataset.swdel) { const c = sw(b.dataset.swdel); if (!confirm(`¿Quitar «${c.name}»? (va a la papelera)`)) return; await act(() => api("/api/cheats/eden/delete", {title_id: c.title_id, name: c.name}), "Quitado"); }
+    else return;
+  } catch { return; }
+  loadCheats();
+};
+$("cswFile").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  $("cswText").value = await f.text();
+  const stem = f.name.replace(/\.txt$/i, "");
+  if (/^[0-9a-f]{16}([0-9a-f]{16})?$/i.test(stem)) $("cswBuild").value = stem.toUpperCase();
+  e.target.value = "";
+};
+$("cheatSwForm").onsubmit = async e => {
+  e.preventDefault();
+  try {
+    await act(() => api("/api/cheats/eden/save", {title_id: $("cswGame").value, name: $("cswName").value.trim(), build_id: $("cswBuild").value.trim(), text: $("cswText").value}), "Truco guardado");
+    $("cswText").value = ""; $("cswName").value = ""; $("cswBuild").value = ""; loadCheats();
+  } catch {}
+};
+loaders.cheats = loadCheats;
+
+// --- Ajustes ------------------------------------------------------------------
+async function loadSettings() {
+  const s = await api("/api/settings");
+  $("autoArt").checked = s.auto_artwork;
+  $("sgdbKey").placeholder = s.steamgriddb_key_set ? `Clave guardada (${s.steamgriddb_key_hint}) · escribe otra para cambiarla` : "Pega aquí tu clave de SteamGridDB";
+  $("sgdbStatus").textContent = s.steamgriddb_key_set ? "✓ Clave configurada" : "Sin clave: los juegos aparecerán sin portada.";
+}
+$("sgdbForm").onsubmit = async e => {
+  e.preventDefault();
+  const key = $("sgdbKey").value.trim(); if (!key) return;
+  try { await act(() => api("/api/settings", {steamgriddb_key: key}), "Clave válida y guardada"); $("sgdbKey").value = ""; loadSettings(); } catch {}
+};
+$("autoArt").onchange = () => act(() => api("/api/settings", {auto_artwork: $("autoArt").checked}), "Guardado");
+$("artAll").onclick = async () => {
+  const r = await act(() => api("/api/shortcuts/art/refresh", {}));
+  toast(`Buscando portadas para ${r.queued} juegos · aparecerán en Steam en un minuto`);
+};
+loaders.settings = loadSettings;
+
+// --- Paquetes -----------------------------------------------------------------
+async function loadPackages() {
+  try {
+    const d = await api("/api/packages");
+    $("pkgList").innerHTML = `<p class="sub">${d.apps.length} aplicaciones · ${gb(d.total)}</p><table>${d.apps.map(a =>
+      `<tr><td><strong>${esc(a.name)}</strong><br><span class="sub">${esc(a.id)}</span></td><td class="muted">${esc(a.version)}</td><td class="num">${gb(a.size)}</td>
+       <td class="num"><button class="b danger" data-uninstall="${esc(a.id)}" data-name="${esc(a.name)}">Desinstalar</button></td></tr>`).join("")}</table>`;
+  } catch (e) { $("pkgList").innerHTML = `<p class="err">${esc(e.message)}</p>`; }
+}
+$("pkgList").onclick = async e => {
+  const b = e.target.closest("button[data-uninstall]"); if (!b) return;
+  if (!confirm(`¿Desinstalar ${b.dataset.name}?\nSus datos de usuario (~/.var/app) se conservan.`)) return;
+  await act(() => api("/api/packages/uninstall", {id: b.dataset.uninstall}), "Desinstalando · mira la pestaña Tareas"); pollJobs();
+};
+$("pkgSearchForm").onsubmit = async e => {
+  e.preventDefault(); const q = $("pkgQuery").value.trim(); if (!q) return;
+  $("pkgResults").innerHTML = `<p class="sub">Buscando…</p>`;
+  try {
+    const res = await api("/api/packages/search?q=" + encodeURIComponent(q));
+    $("pkgResults").innerHTML = res.length ? `<table>${res.map(r =>
+      `<tr><td><strong>${esc(r.name)}</strong> <span class="sub">${esc(r.version)}</span><br><span class="sub">${esc(r.id)} · ${esc(r.description)}</span></td>
+       <td class="num"><button class="b primary" data-install="${esc(r.id)}">Instalar</button></td></tr>`).join("")}</table>` : `<p class="sub">Sin resultados</p>`;
+  } catch (err) { $("pkgResults").innerHTML = `<p class="err">${esc(err.message)}</p>`; }
+};
+$("pkgResults").onclick = async e => {
+  const b = e.target.closest("button[data-install]"); if (!b) return;
+  b.disabled = true;
+  await act(() => api("/api/packages/install", {id: b.dataset.install}), "Instalando · mira la pestaña Tareas"); pollJobs();
+};
+loaders.packages = loadPackages;
+
+// --- Tareas -------------------------------------------------------------------
+let jobTimer = null, lastRunning = 0;
+async function pollJobs() {
+  clearTimeout(jobTimer);
+  let list;
+  try { list = await api("/api/jobs"); } catch { return; }
+  const running = list.filter(j => j.status === "running").length;
+  $("jobsBadge").hidden = !running; $("jobsBadge").textContent = running;
+  if (lastRunning && running < lastRunning) {
+    if (tab === "packages") loadPackages();
+    if (tab === "emulators") loadEmulators();
+    if (tab === "saves") loadSaves();
+    if (tab === "files" && cwd) loadDir(cwd);
+  }
+  lastRunning = running;
+  $("jobList").innerHTML = list.length ? list.map(j => {
+    const pct = j.total ? Math.round(j.done * 100 / j.total) : null;
+    const st = {running: "en curso", done: "terminada", error: "error"}[j.status];
+    return `<div style="margin-bottom:10px">${row(j.label, `<span class="${j.status === "error" ? "err" : ""}">${st}${pct != null ? ` · ${pct}% · ${gb(j.done)} / ${gb(j.total)}` : ""}</span>`)}
+      ${j.status === "running" && pct != null ? meter(pct, 101, 101) : ""}${j.error ? `<div class="err sub">${esc(j.error)}</div>` : ""}</div>`;
+  }).join("") : `<p class="sub">No hay tareas.</p>`;
+  if (running || tab === "jobs") jobTimer = setTimeout(pollJobs, 1500);
+}
+loaders.jobs = pollJobs;
+
+// --- Inicio -------------------------------------------------------------------
+tick(); setInterval(tick, 2000);
+try { const t = localStorage.getItem("deckhub.tab"); if (t && t !== "summary") document.querySelector(`#tabs button[data-tab="${t}"]`)?.click(); } catch {}
+</script>
+</body>
+</html>
