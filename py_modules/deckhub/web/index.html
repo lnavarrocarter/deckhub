@@ -302,8 +302,11 @@
   .menu .sub { font-size: 12px; }
 
   /* Detalle de un juego */
-  dialog.big { max-width: 1120px; padding: 0; background: var(--bg); }
-  .ghero { min-height: 280px; padding: 20px 28px; }
+  .gamepage { padding-top: 12px !important; }
+  .gamepage .ghero { border-radius: 18px 18px 0 0; }
+  .gamepage .dtabs { border-radius: 0; position: sticky; top: 0; z-index: 2; }
+  .gback { align-self: flex-start; background: rgba(13,16,21,.62) !important; color: #fff !important; min-height: 40px; margin-bottom: auto; }
+  .ghero { min-height: 300px; padding: 20px 28px; }
   .ghead h2 { font-size: 34px; font-weight: 800; letter-spacing: -.02em; }
   button.b.big { min-height: 48px; padding: 0 24px; font-size: 16px; border-radius: 12px; }
   .dtabs { background: var(--side); padding: 0 20px; }
@@ -325,7 +328,7 @@
   .thumb.logo img { object-fit: contain; height: 56px; background: repeating-conic-gradient(var(--line) 0 25%, transparent 0 50%) 0 0/12px 12px; }
   .thumb .sub { font-size: 11px; }
   @media (max-width: 760px) {
-    dialog.big { max-width: none; width: 100%; height: 100%; max-height: none; margin: 0; border-radius: 0; }
+    .gamepage .ghero { border-radius: 14px 14px 0 0; }
     .ghero { min-height: 220px; padding: 14px 16px; }
     .ghead h2 { font-size: 26px; }
     .gbody { padding: 14px 16px 24px; }
@@ -515,15 +518,16 @@
     </div>
   </section>
 
-  <dialog id="gameDlg" class="big">
+  <!-- Detalle de un juego: una página más del contenido (no una ventana encima). -->
+  <section class="tab gamepage" id="tab-game">
     <div class="ghero" id="gdHero">
-      <button class="b gclose" id="gdClose" title="Cerrar">✕</button>
+      <button class="b gback" id="gdClose">← <span id="gdBackLabel">Juegos</span></button>
       <div class="ghead"><img id="gdLogo" alt="" hidden><div><h2 id="gdTitle"></h2><div id="gdBadges"></div></div></div>
       <div class="toolbar gactions" id="gdActions"></div>
     </div>
     <nav class="dtabs" id="gdTabs"><button data-dt="info" class="on">Resumen</button><button data-dt="art">Carátulas</button><button data-dt="run">Ejecución</button><button data-dt="opts">Opciones</button></nav>
     <div class="gbody" id="gdBody"></div>
-  </dialog>
+  </section>
 
   <section class="tab" id="tab-emulators">
     <div class="phead">
@@ -1287,12 +1291,24 @@ $("dlAll").onclick = async () => {
 loaders.games = async () => { loadDownloads(); if (!games) await loadGames(); else loadLibrary(); await loadSteam(); };
 
 // --- Detalle de un juego ---------------------------------------------------------
-let gd = null, gdTab = "info";
+let gd = null, gdTab = "info", gdFrom = "games";
+// El detalle ocupa el área de contenido; el menú sigue marcando la sección de origen.
+const TAB_NAMES = {games: "Juegos", custom: "Personalización", store: "Ofertas", playtime: "Tiempo de juego"};
+function showGamePage() {
+  if (tab !== "game") gdFrom = tab;
+  tab = "game";
+  document.querySelectorAll("section.tab").forEach(sec => sec.classList.toggle("on", sec.id === "tab-game"));
+  $("gdBackLabel").textContent = tr(TAB_NAMES[gdFrom] || "Volver");
+  scrollTo({top: 0});
+  if (history.state?.game === undefined) history.pushState({game: true}, "");
+}
+function closeGamePage() { goTab(gdFrom); }
+addEventListener("popstate", () => { if (tab === "game") closeGamePage(); });
 const LAUNCH_PRESETS = [["MangoHud (FPS en pantalla)", "mangohud %command%"], ["Registro de Proton", "PROTON_LOG=1 %command%"], ["Ventana", "%command% -windowed"]];
 async function openGame(key) {
   $("gdTitle").textContent = "Cargando…"; $("gdBadges").innerHTML = ""; $("gdActions").innerHTML = ""; $("gdBody").innerHTML = "";
   $("gdLogo").hidden = true; $("gdHero").style.backgroundImage = "";
-  if (!$("gameDlg").open) $("gameDlg").showModal();
+  showGamePage();
   try { gd = await api("/api/library/detail?key=" + encodeURIComponent(key)); } catch (e) { $("gdTitle").textContent = "Error: " + e.message; return; }
   renderGameHead(); showGameTab(gdTab);
 }
@@ -1414,13 +1430,12 @@ async function gamePrice(appid) {
 }
 $("gdTabs").onclick = e => { const b = e.target.closest("[data-dt]"); if (b && gd) showGameTab(b.dataset.dt); };
 $("gdBody").addEventListener("click", e => { const b = e.target.closest("[data-dt]"); if (b && gd) showGameTab(b.dataset.dt); });
-$("gdClose").onclick = () => $("gameDlg").close();
-$("gameDlg").addEventListener("click", e => { if (e.target === $("gameDlg")) $("gameDlg").close(); });
+$("gdClose").onclick = () => history.state?.game ? history.back() : closeGamePage();
 const steamDo = (action, value, msg) => act(() => api("/api/library/action", {action, appid: gd.appid, value}), msg ?? "Se aplica en Steam en unos segundos");
-$("gameDlg").addEventListener("change", async e => {
+$("tab-game").addEventListener("change", async e => {
   if (e.target.id === "gdHidden") { await steamDo("hidden", e.target.checked, e.target.checked ? "Se ocultará en la biblioteca" : "Volverá a mostrarse"); gd.hidden = e.target.checked; renderGameHead(); }
 });
-$("gameDlg").addEventListener("click", async e => {
+$("tab-game").addEventListener("click", async e => {
   const p = e.target.closest("[data-preset]");
   if (p) { const t = $("gdLaunch"); t.value = t.value.trim() ? (t.value.includes("%command%") && p.dataset.preset.includes("%command%") ? p.dataset.preset.replace("%command%", t.value.trim()) : t.value + " " + p.dataset.preset) : p.dataset.preset; return; }
   const b = e.target.closest("[data-gd]"); if (!b) return;
@@ -1432,9 +1447,9 @@ $("gameDlg").addEventListener("click", async e => {
   else if (a === "add") { await steamAdd([gd.rom.path]); setTimeout(() => openGame(gd.key), 6000); }
   else if (a === "remove") { if (!await ask(`¿Quitar «${gd.title}» de Steam? El archivo del juego no se toca.`)) return;
     await act(() => api("/api/shortcuts/remove", {paths: [gd.rom.path]}), "Se quitará de Steam"); loadSteam(); setTimeout(() => openGame(gd.key), 6000); }
-  else if (a === "folder") { $("gameDlg").close(); openFiles((gd.rom?.path || gd.install_dir + "/x").replace(/\/[^/]+$/, "")); }
-  else if (a === "saves" || a === "cheats") { $("gameDlg").close(); goTab(a); }
-  else if (a === "deals") { $("gameDlg").close(); goTab("store"); }
+  else if (a === "folder") { openFiles((gd.rom?.path || gd.install_dir + "/x").replace(/\/[^/]+$/, "")); }
+  else if (a === "saves" || a === "cheats") goTab(a);
+  else if (a === "deals") goTab("store");
 });
 
 // --- Emuladores ---------------------------------------------------------------

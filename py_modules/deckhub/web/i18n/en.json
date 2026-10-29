@@ -673,5 +673,6 @@
  "Descargar respaldo": "Download backup",
  "Cierra {} antes de eliminar partidas.": "Close {} before deleting saves.",
  "Ese respaldo no contiene la partida.": "That backup does not contain the save.",
- "Auto (Steam)": "Auto (Steam)"
+ "Auto (Steam)": "Auto (Steam)",
+ "Volver": "Back"
 }
