@@ -221,6 +221,25 @@ class Plugin:
         except Exception:
             return False
 
+    async def get_perf(self):
+        """Resumen de los ajustes de memoria para el menú rápido."""
+        try:
+            d = (await asyncio.to_thread(_request, "/api/perf")).get("data") or {}
+        except Exception:
+            return None
+        tun = [s for s in d.get("settings", []) if s.get("tunable")]
+        return {"done": sum(1 for s in tun if s["optimized"]), "total": len(tun),
+                "pending": [s["id"] for s in tun if not s["optimized"]],
+                "ready": bool(d.get("helper", {}).get("allowed") and d["helper"].get("up_to_date")),
+                "swap_gb": round((d.get("swapfile") or {}).get("size", 0) / 1024 ** 3)}
+
+    async def apply_perf(self, ids):
+        try:
+            r = await asyncio.to_thread(_request, "/api/perf/apply", {"ids": ids, "persist": True})
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+        return {"ok": "error" not in r, "error": r.get("error")}
+
     async def get_language(self):
         """Idioma del panel (el elegido en Ajustes o el de Steam): «es», «en»…"""
         try:

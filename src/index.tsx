@@ -16,6 +16,9 @@ const getAccess = callable<[], AccessInfo>("get_access");
 const setLanAccess = callable<[boolean], { ok: boolean; error?: string }>("set_lan_access");
 const restartDaemon = callable<[], { ok: boolean; error?: string }>("restart_daemon");
 const setMounted = callable<[string, boolean], { ok: boolean; error?: string }>("set_mounted");
+type PerfInfo = { done: number; total: number; pending: string[]; ready: boolean; swap_gb: number } | null;
+const getPerf = callable<[], PerfInfo>("get_perf");
+const applyPerf = callable<[string[]], { ok: boolean; error?: string }>("apply_perf");
 
 const gb = (b?: number) =>
   b == null ? "—" : b >= 1e12 ? `${(b / 1e12).toFixed(2)} TB` : `${(b / 1e9).toFixed(1)} GB`;
@@ -56,6 +59,48 @@ function Downloads() {
           {t("downloadAll", { n })}
         </ButtonItem>
       </PanelSectionRow>
+    </PanelSection>
+  );
+}
+
+// Ajustes de memoria (pestaña Rendimiento del panel): estado y aplicar los recomendados.
+function Performance() {
+  const [p, setP] = useState<PerfInfo>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    getPerf().then(setP);
+  }, []);
+  if (!p) return null;
+  return (
+    <PanelSection title={t("performance")}>
+      <PanelSectionRow>
+        <Field label={t("memoryTuning")} bottomSeparator="none">
+          {t("tuningValue", { done: p.done, total: p.total, swap: p.swap_gb })}
+        </Field>
+      </PanelSectionRow>
+      {p.done < p.total && (
+        <PanelSectionRow>
+          {p.ready ? (
+            <ButtonItem
+              layout="below"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                const r = await applyPerf(p.pending);
+                toaster.toast({ title: "DeckHub", body: r.ok ? t("tuningApplied") : r.error ?? t("error") });
+                setTimeout(async () => {
+                  setP(await getPerf());
+                  setBusy(false);
+                }, 2500);
+              }}
+            >
+              {t("applyRecommended")}
+            </ButtonItem>
+          ) : (
+            <Field description={t("helperMissing")} bottomSeparator="none" />
+          )}
+        </PanelSectionRow>
+      )}
     </PanelSection>
   );
 }
@@ -216,6 +261,8 @@ function Content() {
       </PanelSection>
 
       <Downloads />
+
+      <Performance />
 
       <Access />
 

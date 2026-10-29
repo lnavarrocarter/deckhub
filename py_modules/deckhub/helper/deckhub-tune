@@ -1,0 +1,164 @@
+#!/usr/bin/python3
+"""DeckHub: ayudante con permisos de administrador para ajustar la memoria del Deck.
+
+Se instala una sola vez en /etc/deckhub/deckhub-tune (dueño root, no editable por el
+usuario) y una regla de sudoers permite al usuario deck ejecutarlo sin contraseña.
+Solo hace lo que está en esta lista, con valores validados:
+
+  deckhub-tune apply '<json>' [--persist]   ajusta parámetros de memoria
+  deckhub-tune revert                        vuelve a los valores anteriores a DeckHub
+  deckhub-tune swap <GB>                     cambia el tamaño de /home/swapfile (1-32)
+"""
+import json
+import os
+import shutil
+import subprocess
+import sys
+
+VERSION = 1
+MM = "/sys/kernel/mm/transparent_hugepage"
+# id -> (archivo, valores permitidos)
+SYSCTL = {
+    "swappiness": ("/proc/sys/vm/swappiness", "vm.swappiness", range(0, 201)),
+    "compaction_proactiveness": ("/proc/sys/vm/compaction_proactiveness", "vm.compaction_proactiveness", range(0, 101)),
+    "page_lock_unfairness": ("/proc/sys/vm/page_lock_unfairness", "vm.page_lock_unfairness", range(0, 11)),
+}
+SYSFS = {
+    "thp_enabled": (f"{MM}/enabled", {"always", "madvise", "never"}),
+    "thp_shmem": (f"{MM}/shmem_enabled", {"always", "within_size", "advise", "never", "deny", "force"}),
+    "khugepaged_defrag": (f"{MM}/khugepaged/defrag", {"0", "1"}),
+}
+STATE_DIR = "/etc/deckhub"
+STATE = f"{STATE_DIR}/before.json"
+SYSCTL_CONF = "/etc/sysctl.d/99-deckhub.conf"
+TMPFILES_CONF = "/etc/tmpfiles.d/deckhub-thp.conf"
+SWAPFILE = "/home/swapfile"
+
+
+def die(msg, code=1):
+    print(msg, file=sys.stderr)
+    sys.exit(code)
+
+
+def read(path):
+    v = open(path).read().strip()
+    if "[" in v:  # «always [madvise] never»: el valor activo va entre corchetes
+        v = v.split("[", 1)[1].split("]", 1)[0]
+    return v
+
+
+def write(path, value):
+    with open(path, "w") as f:
+        f.write(str(value))
+
+
+def current():
+    vals = {k: read(p) for k, (p, _, _) in SYSCTL.items()}
+    vals |= {k: read(p) for k, (p, _) in SYSFS.items()}
+    return vals
+
+
+def validate(values):
+    clean = {}
+    for k, v in values.items():
+        v = str(v)
+        if k in SYSCTL:
+            if not v.isdigit() or int(v) not in SYSCTL[k][2]:
+                die(f"valor no válido para {k}: {v}")
+        elif k in SYSFS:
+            if v not in SYSFS[k][1]:
+                die(f"valor no válido para {k}: {v}")
+        else:
+            die(f"ajuste desconocido: {k}")
+        clean[k] = v
+    return clean
+
+
+def persist(values):
+    """Deja los ajustes aplicados en cada arranque (sysctl.d y tmpfiles.d)."""
+    sysctl = {k: v for k, v in values.items() if k in SYSCTL}
+    sysfs = {k: v for k, v in values.items() if k in SYSFS}
+    if sysctl:
+        with open(SYSCTL_CONF, "w") as f:
+            f.write("# Ajustes de memoria de DeckHub (se quitan con «Volver a los de fábrica»)\n")
+            f.writelines(f"{SYSCTL[k][1]} = {v}\n" for k, v in sysctl.items())
+    if sysfs:
+        with open(TMPFILES_CONF, "w") as f:
+            f.write("# Ajustes de memoria de DeckHub (se quitan con «Volver a los de fábrica»)\n")
+            f.writelines(f"w {SYSFS[k][0]} - - - - {v}\n" for k, v in sysfs.items())
+
+
+def apply(values, keep):
+    values = validate(values)
+    os.makedirs(STATE_DIR, exist_ok=True)
+    if not os.path.exists(STATE):  # foto de cómo estaba todo antes del primer cambio
+        with open(STATE, "w") as f:
+            json.dump(current(), f)
+    for k, v in values.items():
+        write(SYSCTL[k][0] if k in SYSCTL else SYSFS[k][0], v)
+    if keep:
+        merged = {}
+        for path in (SYSCTL_CONF, TMPFILES_CONF):
+            if os.path.exists(path):  # conserva lo persistido antes que no se toca ahora
+                for line in open(path):
+                    for k, (_, name, _) in SYSCTL.items():
+                        if line.startswith(name + " "):
+                            merged[k] = line.split("=", 1)[1].strip()
+                    for k, (p, _) in SYSFS.items():
+                        if line.startswith(f"w {p} "):
+                            merged[k] = line.split()[-1]
+        persist(merged | values)
+    print(json.dumps(current()))
+
+
+def revert():
+    before = json.load(open(STATE)) if os.path.exists(STATE) else {}
+    for k, v in validate(before).items():
+        write(SYSCTL[k][0] if k in SYSCTL else SYSFS[k][0], v)
+    for path in (SYSCTL_CONF, TMPFILES_CONF, STATE):
+        if os.path.exists(path):
+            os.remove(path)
+    print(json.dumps(current()))
+
+
+def swap(gb):
+    if not gb.isdigit() or not 1 <= int(gb) <= 32:
+        die("el tamaño de swap debe estar entre 1 y 32 GB")
+    size = int(gb) * 1024 ** 3
+    old = os.path.getsize(SWAPFILE) if os.path.exists(SWAPFILE) else 0
+    free = shutil.disk_usage("/home").free + old
+    if free < size + 4 * 1024 ** 3:
+        die(f"no hay espacio: se necesitan {gb} GB + 4 GB libres en /home")
+    if os.path.exists(SWAPFILE):
+        subprocess.run(["swapoff", SWAPFILE], check=False)
+        os.remove(SWAPFILE)
+    # Igual que hace SteamOS (holo-create-swapfile): mkswap crea el archivo sin huecos.
+    subprocess.run(["mkswap", "--file", SWAPFILE, "--size", f"{gb}G"], check=True, stdout=subprocess.DEVNULL)
+    subprocess.run(["swapon", SWAPFILE], check=True)
+    print(json.dumps({"swapfile": os.path.getsize(SWAPFILE)}))
+
+
+def main():
+    if os.geteuid() != 0:
+        die("deckhub-tune necesita ejecutarse con sudo")
+    args = sys.argv[1:]
+    if args[:1] == ["version"]:
+        print(VERSION)
+    elif args[:1] == ["apply"] and len(args) in (2, 3):
+        try:
+            values = json.loads(args[1])
+        except ValueError:
+            die("JSON no válido")
+        if not isinstance(values, dict):
+            die("se esperaba un objeto JSON")
+        apply(values, "--persist" in args[2:])
+    elif args == ["revert"]:
+        revert()
+    elif args[:1] == ["swap"] and len(args) == 2:
+        swap(args[1])
+    else:
+        die(__doc__, 2)
+
+
+if __name__ == "__main__":
+    main()

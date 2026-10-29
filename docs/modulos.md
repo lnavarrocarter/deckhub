@@ -6,6 +6,24 @@ Guía de cada pestaña del panel web (`http://<ip-del-deck>:8765`). Las acciones
 
 Estado en vivo: CPU, GPU, temperaturas, batería, RAM, red, servicios y si Steam está en modo juego o escritorio. Es lo único visible sin token.
 
+## Rendimiento
+
+Ajustes de memoria al estilo de CryoUtilities, con los valores actuales al lado de los recomendados:
+
+| Ajuste | SteamOS 3.9 | Recomendado |
+|---|---|---|
+| Swappiness | 60 | 1 |
+| Compactación proactiva | 20 | 0 |
+| Page lock unfairness | 5 | 1 |
+| Desfragmentación de huge pages | 1 | 0 |
+| Archivo de swap | 1 GB | 16 GB |
+
+SteamOS 3.9 ya trae zram y las Transparent Huge Pages activadas, así que la mejora es menor que en versiones antiguas. La VRAM (recomendado 4 GB) se cambia en la BIOS; el panel explica cómo.
+
+- **Aplicar** por ajuste o todos, con «Mantener al reiniciar» (`/etc/sysctl.d/99-deckhub.conf` y `/etc/tmpfiles.d/deckhub-thp.conf`).
+- **Volver a los de fábrica** restaura los valores de antes del primer cambio y quita esos archivos.
+- **Ayudante**: los cambios necesitan root. Se instala una vez `/etc/deckhub/deckhub-tune` (dueño root) con una regla de sudoers que solo permite ese programa; el panel muestra el comando. Solo acepta esos ajustes con valores validados.
+
 ## Unidades y espacio
 
 - Montar y desmontar la microSD y discos USB (solo dispositivos extraíbles).

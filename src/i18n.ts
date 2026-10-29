@@ -55,6 +55,12 @@ const STRINGS = {
     alertTarget: "Bajó de tu precio objetivo",
     alertLow: "Está en su mínimo histórico",
     alertBoth: "Bajó de tu precio objetivo y está en su mínimo histórico",
+    performance: "Rendimiento",
+    memoryTuning: "Memoria optimizada",
+    tuningValue: "{done} de {total} · swap {swap} GB",
+    applyRecommended: "Aplicar recomendados",
+    tuningApplied: "Ajustes de memoria aplicados",
+    helperMissing: "Instala el ayudante desde el panel web (Rendimiento)",
   },
   en: {
     loading: "Loading…",
@@ -106,6 +112,12 @@ const STRINGS = {
     alertTarget: "Dropped below your target price",
     alertLow: "Is at its historical low",
     alertBoth: "Dropped below your target price and is at its historical low",
+    performance: "Performance",
+    memoryTuning: "Memory tuning",
+    tuningValue: "{done} of {total} · swap {swap} GB",
+    applyRecommended: "Apply recommended",
+    tuningApplied: "Memory settings applied",
+    helperMissing: "Install the helper from the web dashboard (Performance)",
   },
 };
 

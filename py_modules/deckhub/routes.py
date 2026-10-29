@@ -9,7 +9,7 @@ from aiohttp import web
 
 from . import fileops, jobs
 from . import config
-from .modules import artwork, cheats, custom, emulators, library, packages, playtime, store, roms, saves, shortcuts, storage
+from .modules import artwork, cheats, custom, emulators, library, packages, perf, playtime, store, roms, saves, shortcuts, storage
 
 
 def _ok(data=None, **extra):
@@ -254,6 +254,23 @@ async def downloads_report(request):
 async def downloads_all(request):
     library.download_all()
     return _ok()
+
+
+async def perf_get(request):
+    return _ok(await perf.collect())
+
+
+async def perf_apply(request):
+    b = await _body(request)
+    return _ok(perf.apply(b.get("ids") or [], bool(b.get("persist", True))))
+
+
+async def perf_revert(request):
+    return _ok(perf.revert())
+
+
+async def perf_swap(request):
+    return _ok(perf.resize_swap((await _body(request))["gb"]))
 
 
 async def store_get(request):
@@ -627,6 +644,10 @@ def setup(app):
     r.add_get("/api/steam/downloads", downloads_get)
     r.add_post("/api/steam/downloads", downloads_report)
     r.add_post("/api/steam/downloads/all", downloads_all)
+    r.add_get("/api/perf", perf_get)
+    r.add_post("/api/perf/apply", perf_apply)
+    r.add_post("/api/perf/revert", perf_revert)
+    r.add_post("/api/perf/swap", perf_swap)
     r.add_get("/api/store", store_get)
     r.add_post("/api/store/refresh", store_refresh)
     r.add_post("/api/store/import", store_import)

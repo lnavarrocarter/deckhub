@@ -1,5 +1,10 @@
 # Cambios
 
+## 0.12.0 (2026-10-29)
+
+- Pestaña «Rendimiento» (y sección en el menú rápido): ajustes de memoria al estilo de CryoUtilities (swappiness, compactación proactiva, page lock unfairness, desfragmentación de huge pages), tamaño del archivo de swap y guía para la VRAM. Muestra valores actuales y recomendados, aplica por ajuste, persiste al reiniciar y se revierte con un botón.
+- Ayudante con permisos de administrador limitado a esos ajustes (`/etc/deckhub/deckhub-tune`), instalado una vez por el usuario.
+
 ## 0.11.0 (2026-10-29)
 
 Interfaz según la propuesta de layout (escritorio y móvil):

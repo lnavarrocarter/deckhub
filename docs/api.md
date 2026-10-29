@@ -50,6 +50,15 @@ El token está en `~/.config/deckhub/token` del Deck. Las rutas protegidas respo
 | POST | `/api/emulators/eden/firmware` | multipart (zip) o `{path}` → tarea |
 | POST | `/api/emulators/eden/keys` | multipart `prod.keys` / `title.keys` |
 
+## Rendimiento
+
+| Método | Ruta | Cuerpo |
+|---|---|---|
+| GET | `/api/perf` | ajustes (actual/recomendado/fábrica), memoria, swap, VRAM, estado del ayudante |
+| POST | `/api/perf/apply` | `{ids: [], persist?}` → tarea |
+| POST | `/api/perf/revert` | → tarea |
+| POST | `/api/perf/swap` | `{gb}` (1-32) → tarea |
+
 ## Ofertas
 
 | Método | Ruta | Cuerpo / query |
