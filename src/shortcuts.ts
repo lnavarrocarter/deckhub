@@ -51,7 +51,31 @@ type DeckyAction =
   | { id: string; type: "install"; name: string; version: string; hash: string; artifact: string }
   | { id: string; type: "css_reset" }
   | { id: string; type: "css_install"; name: string; theme_id: string; deps: number }
-  | { id: string; type: "css_state"; name: string; active: boolean };
+  | { id: string; type: "css_state"; name: string; active: boolean }
+  | { id: string; type: "steam"; action: string; appid: number; value: any };
+
+// Acciones sobre un juego pedidas desde el detalle del panel web.
+async function steamAction(a: { action: string; appid: number; value: any }) {
+  switch (a.action) {
+    case "run": {
+      const ov = appStore.GetAppOverviewByAppID(a.appid);
+      SteamClient.Apps.RunGame(ov?.m_gameid ?? String(a.appid), "", -1, 100);
+      break;
+    }
+    case "launch_options":
+      SteamClient.Apps.SetAppLaunchOptions(a.appid, a.value);
+      break;
+    case "shortcut_launch_options":
+      SteamClient.Apps.SetShortcutLaunchOptions(a.appid, a.value);
+      break;
+    case "compat_tool":
+      SteamClient.Apps.SpecifyCompatTool(a.appid, a.value);
+      break;
+    case "hidden":
+      collectionStore.SetAppsAsHidden([a.appid], !!a.value);
+      break;
+  }
+}
 
 const DECKTHEMES = "https://api.deckthemes.com/";
 
@@ -96,6 +120,8 @@ async function applyActions() {
           body: a.deps ? `${a.name} instalado con ${a.deps} temas` : `${a.name} instalado`,
         });
         cssChanged = true;
+      } else if (a.type === "steam") {
+        await steamAction(a);
       } else if (a.type === "css_state") {
         await cssLoader("set_theme_state", { name: a.name, state: a.active });
         cssChanged = true;

@@ -1,5 +1,12 @@
 # Cambios
 
+## 0.7.0 (2026-10-29)
+
+- Pestaña Juegos rehecha: biblioteca unificada (Steam + emulación + accesos directos) en cuadrícula de portadas o lista, con filtros, orden e insignia de compatibilidad con Steam Deck.
+- Ficha de detalle por juego: resumen (tiempo, tamaño, ProtonDB, actualizaciones/DLC), carátulas, ejecución (Jugar, opciones de lanzamiento, Proton) y opciones (ocultar, agregar/quitar de Steam).
+- El plugin aplica en Steam: jugar, opciones de lanzamiento, versión de Proton y ocultar.
+- Editor de carátulas reutilizable (Personalización y detalle).
+
 ## 0.6.0 (2026-10-29)
 
 - Temas: con CSS Loader instalado, instalar/activar pasa por CSS Loader (trae las dependencias de los perfiles) y su interfaz se recarga para mostrar los cambios. Antes los perfiles quedaban sin sus temas.

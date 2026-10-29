@@ -8,7 +8,7 @@ from aiohttp import web
 
 from . import fileops, jobs
 from . import config
-from .modules import artwork, cheats, custom, emulators, packages, playtime, roms, saves, shortcuts, storage
+from .modules import artwork, cheats, custom, emulators, library, packages, playtime, roms, saves, shortcuts, storage
 
 
 def _ok(data=None, **extra):
@@ -205,7 +205,30 @@ async def playtime_get(request):
 
 
 async def playtime_report(request):
-    return _ok(playtime.store((await _body(request)).get("apps")))
+    b = await _body(request)
+    return _ok(playtime.store(b.get("apps"), b.get("compat_tools")))
+
+
+async def library_list(request):
+    return _ok(await library.collect())
+
+
+async def library_detail(request):
+    return _ok(await library.detail(request.query.get("key", "")))
+
+
+async def library_action(request):
+    b = await _body(request)
+    library.steam_action(b["action"], b["appid"], b.get("value"))
+    return _ok()
+
+
+async def art_image(request):
+    """Imagen actual de un juego (para <img>); 404 si Steam no tiene ninguna."""
+    cur = custom.art_current(request.query.get("appid", "0")).get(request.query.get("kind", "grid"))
+    if not cur:
+        raise web.HTTPNotFound()
+    return web.FileResponse(cur["path"], headers={"Cache-Control": "max-age=60"})
 
 
 async def art_pending(request):
@@ -495,6 +518,10 @@ def setup(app):
     r.add_post("/api/shortcuts/art/refresh", art_refresh)
     r.add_get("/api/steam/playtime", playtime_get)
     r.add_post("/api/steam/playtime", playtime_report)
+    r.add_get("/api/library", library_list)
+    r.add_get("/api/library/detail", library_detail)
+    r.add_post("/api/library/action", library_action)
+    r.add_get("/api/custom/art/image", art_image)
     r.add_get("/api/custom", custom_get)
     r.add_get("/api/custom/art/options", custom_art_options)
     r.add_get("/api/custom/art/current", custom_art_current)

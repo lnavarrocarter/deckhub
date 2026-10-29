@@ -96,6 +96,42 @@
   .artrow figcaption { font-size: 12px; color: var(--muted); margin-top: 4px; }
   .artrow .gallery { max-height: 300px; overflow-y: auto; }
   @media (max-width: 640px) { .artrow, .artrow.wide, .artrow.hero, .artrow.logo { grid-template-columns: 1fr; } }
+  /* Biblioteca */
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg button { font: inherit; border: 0; background: var(--card); color: var(--muted); padding: 5px 12px; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button.on { background: var(--accent); color: #fff; }
+  .libgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; }
+  .gcard { font: inherit; color: inherit; text-align: left; background: none; border: 0; padding: 0; cursor: pointer; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .gcard .cover { position: relative; aspect-ratio: 2/3; border-radius: 8px; overflow: hidden; background: var(--hover); box-shadow: 0 2px 6px rgba(0,0,0,.18); transition: transform .15s, box-shadow .15s; display: flex; }
+  .gcard:hover .cover, .gcard:focus-visible .cover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.3); outline: 2px solid var(--accent); }
+  .gcard .cover img { width: 100%; height: 100%; object-fit: cover; }
+  .gcard.dim .cover { filter: grayscale(.7); opacity: .7; }
+  .gcard .gmeta { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .gcard .gmeta b { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gcard .gmeta span { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; font-size: 12px; }
+  .ph { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; padding: 10px; text-align: center; width: 100%; background: linear-gradient(160deg, var(--hover), var(--line)); font-size: 12px; }
+  .deck { position: absolute; top: 6px; right: 6px; font-size: 10px; padding: 1px 6px; border-radius: 4px; background: rgba(0,0,0,.65); color: #fff; }
+  .deck.ok { color: #6fdc9c; } .deck.warn { color: #ffc864; } .deck.bad { color: #ff8a8a; }
+  .tag.steam { color: var(--accent); } .tag.ok { color: var(--ok); } .tag.warn { color: var(--warn); } .tag.bad { color: var(--bad); }
+  dialog.big { max-width: 980px; width: calc(100% - 32px); padding: 0; max-height: calc(100vh - 32px); overflow: auto; }
+  dialog.big input[type=checkbox] { width: auto; margin: 0 6px 0 0; }
+  .ghero { position: relative; min-height: 210px; background: var(--hover) center/cover no-repeat; display: flex; flex-direction: column; justify-content: flex-end; padding: 16px; color: #fff; }
+  .ghero .gclose { position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,.5); color: #fff; border-color: transparent; }
+  .ghead { display: flex; align-items: flex-end; gap: 16px; }
+  .ghead img { max-width: 260px; max-height: 110px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0,0,0,.6)); }
+  .ghead h2 { margin: 0 0 6px; font-size: 24px; text-shadow: 0 2px 6px rgba(0,0,0,.7); }
+  .ghead .tag { background: rgba(0,0,0,.55); }
+  .gactions { margin: 12px 0 0; }
+  .gactions .b:not(.primary) { background: rgba(0,0,0,.45); color: #fff; border-color: rgba(255,255,255,.2); }
+  .dtabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); padding: 0 12px; position: sticky; top: 0; background: var(--card); z-index: 1; }
+  .dtabs button { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted); padding: 10px 12px; font: inherit; cursor: pointer; }
+  .dtabs button.on { color: var(--text); border-bottom-color: var(--accent); }
+  .gbody { padding: 16px; }
+  .gbody h3 { margin: 16px 0 6px; font-size: 13px; } .gbody h3:first-child { margin-top: 0; }
+  .gbody textarea { width: 100%; font: 13px ui-monospace, monospace; padding: 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--text); margin-bottom: 8px; }
+  code { font: 12px ui-monospace, monospace; background: var(--hover); padding: 1px 4px; border-radius: 4px; }
+  @media (max-width: 640px) { .libgrid { grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 10px; } .ghead { flex-direction: column; align-items: flex-start; } }
 </style>
 </head>
 <body>
@@ -168,12 +204,31 @@
 
   <section class="tab" id="tab-games">
     <div class="card">
-      <div class="toolbar"><select id="gameConsole"></select><input type="search" id="gameFilter" placeholder="Buscar título" class="grow"><button class="b" id="gameRefresh">Volver a escanear</button></div>
+      <div class="toolbar">
+        <div class="seg" id="libSource"><button data-src="" class="on">Todos</button><button data-src="steam">Steam</button><button data-src="rom">Emulación</button><button data-src="shortcut">Otros</button></div>
+        <label class="sub"><input type="checkbox" id="libInstalled" checked> Solo instalados</label>
+        <select id="gameConsole"></select>
+        <input type="search" id="gameFilter" placeholder="Buscar juego" class="grow">
+        <select id="libSort"><option value="recent">Jugados recientemente</option><option value="name">Nombre</option><option value="time">Más tiempo jugado</option><option value="size">Tamaño</option></select>
+        <div class="seg" id="libView"><button data-view="grid" class="on">Portadas</button><button data-view="list">Lista</button></div>
+      </div>
       <div id="gameSummary" class="toolbar"></div>
-      <div class="toolbar"><span class="sub grow" id="steamInfo"></span><button class="b primary" id="steamAddAll">Agregar los visibles a Steam</button></div>
-      <div class="scroll" style="max-height:none"><table><thead><tr><th>Título</th><th>Consola</th><th>Tipo</th><th>Versión</th><th class="num">Tamaño</th><th>Steam</th><th></th></tr></thead><tbody id="gameList"></tbody></table></div>
+      <div class="toolbar"><span class="sub grow" id="steamInfo"></span><button class="b" id="gameRefresh">Volver a escanear</button><button class="b primary" id="steamAddAll">Agregar los visibles a Steam</button></div>
+      <div id="libGrid" class="libgrid"></div>
+      <div id="libList" class="scroll" style="max-height:none" hidden><table><thead><tr><th>Título</th><th>Origen</th><th class="num">Tiempo</th><th class="num">Última vez</th><th class="num">Tamaño</th><th>Steam</th><th></th></tr></thead><tbody id="gameList"></tbody></table></div>
+      <div class="toolbar" style="margin-top:10px"><span class="grow"></span><button class="b" id="libMore" hidden>Ver más</button></div>
     </div>
   </section>
+
+  <dialog id="gameDlg" class="big">
+    <div class="ghero" id="gdHero">
+      <button class="b gclose" id="gdClose" title="Cerrar">✕</button>
+      <div class="ghead"><img id="gdLogo" alt="" hidden><div><h2 id="gdTitle"></h2><div id="gdBadges"></div></div></div>
+      <div class="toolbar gactions" id="gdActions"></div>
+    </div>
+    <nav class="dtabs" id="gdTabs"><button data-dt="info" class="on">Resumen</button><button data-dt="art">Carátulas</button><button data-dt="run">Ejecución</button><button data-dt="opts">Opciones</button></nav>
+    <div class="gbody" id="gdBody"></div>
+  </dialog>
 
   <section class="tab" id="tab-emulators">
     <div id="emuStale"></div>
@@ -240,7 +295,6 @@
       <div class="toolbar">
         <input id="cuGame" class="grow" list="cuGames" placeholder="Busca cualquier juego de tu biblioteca">
         <datalist id="cuGames"></datalist>
-        <button class="b" id="cuReset" title="Quitar las imágenes personalizadas de este juego" disabled>Restaurar originales</button>
       </div>
       <h3>Instalados</h3>
       <div class="gallery capsules" id="cuInstalled"></div>
@@ -590,82 +644,248 @@ card.ondrop = e => { e.preventDefault(); card.classList.remove("drop"); if (cwd 
 loaders.files = async () => { await fillRoots(); if (!cwd) loadDir($("fileRoot").value); renderClip(); };
 
 // --- Juegos -------------------------------------------------------------------
-let games = null, steam = {shortcuts: {}, supported: {}}, steamTimer = null;
+// Biblioteca unificada (Steam + ROMs + otros accesos directos) con detalle por juego.
+let games = null, lib = null, steam = {shortcuts: {}, supported: {}}, steamTimer = null;
+let libSrc = "", libView = "grid", libLimit = 120;
+const DECK_BADGE = {3: ["Verificado", "ok"], 2: ["Jugable", "warn"], 1: ["No compatible", "bad"]};
+const hm2 = m => !m ? "—" : m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`;
+
+// Portada vertical: la de Steam (personalizada u original) o, si no hay, la del CDN de Steam.
+function coverImg(it) {
+  if (!it.appid) return `<span class="ph"><b>${esc(it.title)}</b>${it.console_name ? `<span class="tag ${esc(it.console)}">${esc(it.console_name)}</span>` : ""}</span>`;
+  const cdn = it.source === "steam" ? `https://cdn.cloudflare.steamstatic.com/steam/apps/${it.appid}/library_600x900.jpg` : "";
+  return `<img loading="lazy" alt="" src="/api/custom/art/image?appid=${it.appid}&kind=grid" data-cdn="${cdn}" data-title="${esc(it.title)}" onerror="coverFallback(this)">`;
+}
+function coverFallback(img) {
+  if (img.dataset.cdn) { const u = img.dataset.cdn; img.dataset.cdn = ""; img.src = u; return; }
+  img.outerHTML = `<span class="ph"><b>${img.dataset.title}</b></span>`;
+}
+
 async function loadSteam() {
   try { steam = await api("/api/shortcuts"); } catch { return; }
   const vals = Object.values(steam.shortcuts);
   const pend = vals.filter(s => s.status.startsWith("pending") || ["wanted", "ready"].includes(s.art?.status)).length;
-  $("steamInfo").textContent = `${vals.filter(s => s.status === "added").length} juegos en Steam` +
-    (pend ? ` · ${pend} pendientes (los aplica el plugin dentro de Steam en unos segundos)` : "") +
-    ` · Consolas con emulador: ${Object.values(steam.supported).length ? Object.entries(steam.supported).map(([c, e]) => e).filter((e, i, a) => a.indexOf(e) === i).join(", ") : "ninguna"}`;
+  $("steamInfo").textContent = (pend ? `${pend} cambios pendientes (los aplica el plugin dentro de Steam en unos segundos) · ` : "") +
+    `Consolas con emulador: ${Object.values(steam.supported).length ? Object.values(steam.supported).filter((e, i, a) => a.indexOf(e) === i).join(", ") : "ninguna"}`;
   renderGames();
   clearTimeout(steamTimer);
-  if (pend && tab === "games") steamTimer = setTimeout(loadSteam, 2500);
+  if (pend && tab === "games") steamTimer = setTimeout(() => { loadSteam(); loadLibrary(); }, 2500);
 }
 async function loadGames(refresh) {
-  $("gameList").innerHTML = `<tr><td colspan="7" class="sub">Escaneando…</td></tr>`;
-  try { games = await api("/api/roms" + (refresh ? "?refresh=1" : "")); } catch (e) { $("gameList").innerHTML = `<tr><td colspan="7" class="err">${esc(e.message)}</td></tr>`; return; }
+  $("libGrid").innerHTML = `<p class="sub">Cargando biblioteca…</p>`;
+  try { games = await api("/api/roms" + (refresh ? "?refresh=1" : "")); } catch (e) { $("libGrid").innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
   const cur = $("gameConsole").value;
   $("gameConsole").innerHTML = `<option value="">Todas las consolas</option>` + games.consoles.map(c => `<option value="${esc(c.console)}">${esc(c.name)} (${c.count})</option>`).join("");
   $("gameConsole").value = cur;
-  $("gameSummary").innerHTML = games.consoles.map(c => `<span class="pill">${esc(c.name)}: ${c.count} · ${gb(c.size)}</span>`).join("") || `<span class="sub">No se encontraron juegos en las unidades montadas.</span>`;
+  await loadLibrary();
+}
+async function loadLibrary() {
+  try { lib = await api("/api/library"); } catch (e) { $("libGrid").innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
+  const st = lib.items.filter(i => i.source === "steam");
+  $("gameSummary").innerHTML = `<span class="pill">Steam: ${st.filter(i => i.installed).length} instalados de ${st.length}</span>` +
+    (games?.consoles ?? []).map(c => `<span class="pill">${esc(c.name)}: ${c.count} · ${gb(c.size)}</span>`).join("") +
+    (lib.updated ? "" : `<span class="sub">Los juegos de Steam aparecen cuando el plugin de Decky envía la biblioteca (unos segundos después de abrir Steam).</span>`);
   renderGames();
 }
 const steamable = g => (!g.kind || g.kind === "base") && steam.supported[g.console];
-function visibleGames() {
-  const con = $("gameConsole").value, q = $("gameFilter").value.toLowerCase();
-  return games.games.filter(g => (!con || g.console === con) && (!q || g.title.toLowerCase().includes(q) || g.file.toLowerCase().includes(q)));
+const romOf = it => games?.games.find(g => g.path === it.path);
+function visibleItems() {
+  if (!lib) return [];
+  const con = $("gameConsole").value, q = $("gameFilter").value.toLowerCase(), inst = $("libInstalled").checked;
+  const sort = $("libSort").value;
+  const list = lib.items.filter(i => (!libSrc || i.source === libSrc) && (!inst || i.installed)
+    && (!con || i.console === con) && (!q || i.title.toLowerCase().includes(q) || (i.path || "").toLowerCase().includes(q))
+    && (libView === "list" || !i.kind || i.kind === "base"));
+  const by = {recent: (a, b) => (b.last_played || 0) - (a.last_played || 0) || a.title.localeCompare(b.title),
+              name: (a, b) => a.title.localeCompare(b.title), time: (a, b) => (b.minutes || 0) - (a.minutes || 0),
+              size: (a, b) => (b.size || 0) - (a.size || 0)}[sort];
+  return list.sort(by);
 }
-function steamCell(g) {
-  const s = steam.shortcuts[g.path];
-  if (s?.status === "added") {
-    const art = {wanted: "buscando portada…", ready: "aplicando portada…", applied: "", error: "sin portada"}[s.art?.status] ?? "";
-    return `<span class="pill ok">en Steam</span> <button class="b" data-steam-remove="${esc(g.path)}" title="Quitar de Steam">✕</button>` +
-      (art ? `<br><span class="sub ${s.art?.status === "error" ? "err" : ""}" title="${esc(s.art?.error ?? "")}">${art}</span>` : "");
-  }
+function originTag(i) {
+  if (i.source === "rom") return `<span class="tag ${esc(i.console)}">${esc(i.console_name)}</span>`;
+  return i.source === "steam" ? `<span class="tag steam">Steam</span>` : `<span class="tag">Acceso directo</span>`;
+}
+function steamCell(i) {
+  if (i.source !== "rom") return i.hidden ? `<span class="sub">oculto</span>` : "";
+  const s = steam.shortcuts[i.path];
+  if (s?.status === "added") return `<span class="pill ok">en Steam</span>`;
   if (s?.status === "pending_add") return `<span class="pill">agregando…</span>`;
   if (s?.status === "pending_remove") return `<span class="pill">quitando…</span>`;
   const retry = s?.status === "error" ? `<span class="err sub" title="${esc(s.error)}">error</span> ` : "";
-  return steamable(g) ? `${retry}<button class="b" data-steam-add="${esc(g.path)}">Agregar</button>` : "";
+  const g = romOf(i);
+  return g && steamable(g) ? `${retry}<button class="b" data-steam-add="${esc(i.path)}">Agregar</button>` : "";
 }
 function renderGames() {
-  if (!games) return;
-  const list = visibleGames();
-  const kinds = {base: "Juego", update: "Actualización", dlc: "DLC"};
-  $("gameList").innerHTML = list.map(g => `<tr>
-    <td class="name" title="${esc(g.file)}">${esc(g.title)}${g.title_id ? `<br><span class="sub">${esc(g.title_id)}</span>` : ""}
-      ${g.updates?.length || g.dlc?.length ? `<br>${g.latest_update ? `<span class="tag update">+ ${esc(g.latest_update)}</span> ` : ""}${g.dlc.length ? `<span class="tag dlc">+ ${g.dlc.length} DLC</span>` : ""}
-        ${g.stale_updates?.length ? `<span class="sub" title="Solo cuenta la actualización más nueva">· ${g.stale_updates.length} actualización(es) vieja(s) sobran</span>` : ""}` : ""}
-      ${g.orphan ? `<br><span class="err sub">no está el juego base</span>` : ""}</td>
-    <td><span class="tag ${esc(g.console)}">${esc(g.console_name)}</span></td>
-    <td>${g.kind ? `<span class="tag ${esc(g.kind)}">${kinds[g.kind]}</span>` : ""}</td>
-    <td class="muted">${esc(g.version ?? "")}</td><td class="num">${gb(g.size)}</td>
-    <td style="white-space:nowrap">${steamCell(g)}</td>
-    <td class="num"><button class="b" data-show="${esc(g.path)}">Ver</button></td></tr>`).join("") || `<tr><td colspan="7" class="sub">Sin resultados</td></tr>`;
-  const n = list.filter(g => steamable(g) && !["added", "pending_add"].includes(steam.shortcuts[g.path]?.status)).length;
-  $("steamAddAll").disabled = !n;
-  $("steamAddAll").textContent = n ? `Agregar ${n} visibles a Steam` : "Todo lo visible ya está en Steam";
+  if (!lib) return;
+  const list = visibleItems(), shown = list.slice(0, libLimit);
+  const kinds = {update: "Actualización", dlc: "DLC"};
+  $("libGrid").hidden = libView !== "grid"; $("libList").hidden = libView !== "list";
+  if (libView === "grid") {
+    $("libGrid").innerHTML = shown.map(i => {
+      const deck = DECK_BADGE[i.deck_compat];
+      return `<button class="gcard ${i.installed ? "" : "dim"}" data-key="${esc(i.key)}" title="${esc(i.title)}">
+        <span class="cover">${coverImg(i)}${deck && i.source === "steam" ? `<span class="deck ${deck[1]}" title="Steam Deck: ${deck[0]}">${deck[0]}</span>` : ""}</span>
+        <span class="gmeta"><b>${esc(i.title)}</b><span>${originTag(i)} ${i.minutes ? `<span class="sub">${hm2(i.minutes)}</span>` : ""}
+        ${i.source === "rom" && steam.shortcuts[i.path]?.status === "added" ? `<span class="tag ok">en Steam</span>` : ""}${i.has_updates ? `<span class="tag update">+ act/DLC</span>` : ""}</span></span></button>`;
+    }).join("") || `<p class="sub">Sin resultados.</p>`;
+  } else {
+    $("gameList").innerHTML = shown.map(i => `<tr>
+      <td class="name">${esc(i.title)}${i.kind && kinds[i.kind] ? ` <span class="tag ${esc(i.kind)}">${kinds[i.kind]}</span>` : ""}${i.installed ? "" : ` <span class="sub">· no instalado</span>`}</td>
+      <td>${originTag(i)}</td><td class="num">${hm2(i.minutes)}</td><td class="num muted">${i.last_played ? date(i.last_played) : "—"}</td>
+      <td class="num">${gb(i.size)}</td><td style="white-space:nowrap">${steamCell(i)}</td>
+      <td class="num"><button class="b" data-key="${esc(i.key)}">Detalle</button></td></tr>`).join("") || `<tr><td colspan="7" class="sub">Sin resultados</td></tr>`;
+  }
+  $("libMore").hidden = list.length <= libLimit;
+  $("libMore").textContent = `Ver más (${list.length - shown.length})`;
+  const addable = list.filter(i => i.source === "rom" && romOf(i) && steamable(romOf(i)) && !["added", "pending_add"].includes(steam.shortcuts[i.path]?.status));
+  $("steamAddAll").hidden = !addable.length;
+  $("steamAddAll").textContent = `Agregar ${addable.length} juegos de emulador a Steam`;
 }
 async function steamAdd(paths) {
   const r = await act(() => api("/api/shortcuts/add", {paths}));
   toast(`${r.queued} en cola para Steam` + (r.skipped.length ? ` · ${r.skipped.length} omitidos` : ""));
   loadSteam();
 }
-$("gameConsole").onchange = renderGames;
-$("gameFilter").oninput = renderGames;
+$("libSource").onclick = e => { const b = e.target.closest("[data-src]"); if (!b) return; libSrc = b.dataset.src; libLimit = 120;
+  $("libSource").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); $("gameConsole").hidden = libSrc && libSrc !== "rom"; renderGames(); };
+$("libView").onclick = e => { const b = e.target.closest("[data-view]"); if (!b) return; libView = b.dataset.view;
+  $("libView").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); renderGames(); };
+["gameConsole", "libSort", "libInstalled"].forEach(id => $(id).onchange = () => { libLimit = 120; renderGames(); });
+$("gameFilter").oninput = () => { libLimit = 120; renderGames(); };
+$("libMore").onclick = () => { libLimit += 120; renderGames(); };
 $("gameRefresh").onclick = () => loadGames(true);
 $("steamAddAll").onclick = () => {
-  const paths = visibleGames().filter(g => steamable(g) && !["added", "pending_add"].includes(steam.shortcuts[g.path]?.status)).map(g => g.path);
+  const paths = visibleItems().filter(i => i.source === "rom" && romOf(i) && steamable(romOf(i)) && !["added", "pending_add"].includes(steam.shortcuts[i.path]?.status)).map(i => i.path);
   if (paths.length > 1 && !confirm(`¿Agregar ${paths.length} juegos a tu biblioteca de Steam?`)) return;
   steamAdd(paths);
 };
-$("gameList").onclick = async e => {
-  const b = e.target.closest("button"); if (!b) return;
-  if (b.dataset.show) openFiles(b.dataset.show.replace(/\/[^/]+$/, ""));
-  if (b.dataset.steamAdd) steamAdd([b.dataset.steamAdd]);
-  if (b.dataset.steamRemove) { await act(() => api("/api/shortcuts/remove", {paths: [b.dataset.steamRemove]}), "Se quitará de Steam"); loadSteam(); }
+const openGameFromEvent = e => {
+  const add = e.target.closest("[data-steam-add]"); if (add) { e.stopPropagation(); return steamAdd([add.dataset.steamAdd]); }
+  const b = e.target.closest("[data-key]"); if (b) openGame(b.dataset.key);
 };
-loaders.games = async () => { if (!games) await loadGames(); await loadSteam(); };
+$("libGrid").onclick = openGameFromEvent;
+$("gameList").onclick = openGameFromEvent;
+loaders.games = async () => { if (!games) await loadGames(); else loadLibrary(); await loadSteam(); };
+
+// --- Detalle de un juego ---------------------------------------------------------
+let gd = null, gdTab = "info";
+const LAUNCH_PRESETS = [["MangoHud (FPS en pantalla)", "mangohud %command%"], ["Registro de Proton", "PROTON_LOG=1 %command%"], ["Ventana", "%command% -windowed"]];
+async function openGame(key) {
+  $("gdTitle").textContent = "Cargando…"; $("gdBadges").innerHTML = ""; $("gdActions").innerHTML = ""; $("gdBody").innerHTML = "";
+  $("gdLogo").hidden = true; $("gdHero").style.backgroundImage = "";
+  if (!$("gameDlg").open) $("gameDlg").showModal();
+  try { gd = await api("/api/library/detail?key=" + encodeURIComponent(key)); } catch (e) { $("gdTitle").textContent = "Error: " + e.message; return; }
+  renderGameHead(); showGameTab(gdTab);
+}
+function renderGameHead() {
+  const a = gd.art || {};
+  const hero = a.hero ? `${preview(a.hero.path)}&v=${a.hero.mtime}` : gd.source === "steam" ? `https://cdn.cloudflare.steamstatic.com/steam/apps/${gd.appid}/library_hero.jpg` : "";
+  $("gdHero").style.backgroundImage = hero ? `linear-gradient(to bottom, rgba(0,0,0,.05), rgba(0,0,0,.75)), url("${hero}")` : "";
+  if (a.logo) { $("gdLogo").src = `${preview(a.logo.path)}&v=${a.logo.mtime}`; $("gdLogo").hidden = false; }
+  $("gdTitle").textContent = gd.title || "";
+  const deck = Object.entries(DECK_BADGE).find(([, v]) => v[0] === gd.deck_compat);
+  $("gdBadges").innerHTML = [
+    gd.source === "rom" ? `<span class="tag ${esc(gd.rom.console)}">${esc(gd.rom.console_name)}</span>` : gd.source === "steam" ? `<span class="tag steam">Steam</span>` : `<span class="tag">Acceso directo</span>`,
+    gd.installed ? `<span class="tag ok">Instalado</span>` : `<span class="tag">No instalado</span>`,
+    deck ? `<span class="tag ${deck[1][1]}">Steam Deck: ${deck[1][0]}</span>` : "",
+    gd.protondb?.tier ? `<span class="tag">ProtonDB: ${esc(gd.protondb.tier)}</span>` : "",
+    gd.update_pending ? `<span class="tag update">Actualización pendiente</span>` : "",
+    gd.hidden ? `<span class="tag">Oculto</span>` : "",
+  ].join(" ");
+  const acts = [];
+  if (gd.appid && gd.installed) acts.push(`<button class="b primary" data-gd="run">▶ Jugar</button>`);
+  if (gd.source === "rom" && !gd.appid) acts.push(`<button class="b primary" data-gd="add">Agregar a Steam</button>`);
+  if (gd.source === "rom") acts.push(`<button class="b" data-gd="folder">Ver en Archivos</button>`);
+  if (gd.install_dir && /^\/(home|run\/media)\//.test(gd.install_dir)) acts.push(`<button class="b" data-gd="folder">Carpeta del juego</button>`);
+  if (gd.store_url) acts.push(`<a class="b" href="${esc(gd.store_url)}" target="_blank">Tienda</a> <a class="b" href="https://www.protondb.com/app/${gd.appid}" target="_blank">ProtonDB</a>`);
+  $("gdActions").innerHTML = acts.join("");
+}
+function showGameTab(t) {
+  gdTab = t;
+  $("gdTabs").querySelectorAll("button").forEach(x => x.classList.toggle("on", x.dataset.dt === t));
+  const needsSteam = `<p class="sub">Disponible cuando el juego está en Steam.${gd.source === "rom" ? " Agrégalo con el botón de arriba." : ""}</p>`;
+  const body = $("gdBody");
+  if (t === "info") {
+    const rows = [["Tiempo jugado", hm2(gd.minutes)]];
+    if (gd.minutes_2w) rows.push(["Últimas 2 semanas", hm2(gd.minutes_2w)]);
+    rows.push(["Última vez", gd.last_played ? dt(gd.last_played) : "nunca"]);
+    if (gd.source === "steam") {
+      rows.push(["Tamaño", gd.size ? gb(gd.size) : "—"], ["Carpeta", gd.install_dir ? esc(gd.install_dir) : "—"]);
+      if (gd.buildid) rows.push(["Build", esc(gd.buildid)]);
+      if (gd.last_updated) rows.push(["Actualizado", dt(gd.last_updated)]);
+      if (gd.protondb) rows.push(["ProtonDB", `${esc(gd.protondb.tier || "—")} · ${gd.protondb.total ?? 0} reportes (confianza ${esc(gd.protondb.confidence || "—")})`]);
+      rows.push(["AppID", gd.appid]);
+    } else if (gd.source === "rom") {
+      const r = gd.rom;
+      rows.push(["Archivo", esc(r.path)], ["Tamaño", gb(r.size)]);
+      if (r.title_id) rows.push(["Title ID", esc(r.title_id)]);
+      if (r.version) rows.push(["Versión", esc(r.version)]);
+      rows.push(["En Steam", gd.steam.status === "added" ? `sí · ${esc(gd.steam.emulator || "")}` : gd.steam.status ? esc(gd.steam.status) : "no"]);
+      if (gd.appid) rows.push(["AppID (acceso directo)", gd.appid]);
+    } else rows.push(["AppID (acceso directo)", gd.appid]);
+    let extra = "";
+    const r = gd.rom;
+    if (r && (r.updates?.length || r.dlc?.length)) {
+      extra = `<h3>Actualizaciones y DLC</h3><table><tbody>${[...(r.updates || []).map(u => ["Actualización", u]), ...(r.dlc || []).map(u => ["DLC", u])]
+        .map(([k, u]) => `<tr><td><span class="tag ${k === "DLC" ? "dlc" : "update"}">${k}</span></td><td class="name">${esc(u.title || u.file || u.path || "")}</td><td class="muted">${esc(u.version || "")}</td><td class="num">${gb(u.size)}</td></tr>`).join("")}</tbody></table>`
+        + (r.stale_updates?.length ? `<p class="sub">${r.stale_updates.length} actualización(es) antigua(s) sobran: solo cuenta la más nueva.</p>` : "");
+    }
+    body.innerHTML = rows.map(([k, v]) => row(k, v)).join("") + extra;
+  } else if (t === "art") {
+    if (!gd.appid) { body.innerHTML = needsSteam; return; }
+    artEditor(body, {appid: gd.appid, title: gd.title, shortcut: gd.source !== "steam"});
+    body.addEventListener("artchange", () => api("/api/library/detail?key=" + encodeURIComponent(gd.key)).then(d => { gd = d; renderGameHead(); }), {once: true});
+  } else if (t === "run") {
+    if (!gd.appid) { body.innerHTML = needsSteam; return; }
+    if (gd.source === "steam") {
+      const tools = lib?.compat_tools ?? [];
+      body.innerHTML = `<h3>Opciones de lanzamiento</h3>
+        <p class="sub">Las mismas que en Steam → Propiedades. Usa <code>%command%</code> donde va el juego.</p>
+        <textarea id="gdLaunch" rows="2" spellcheck="false">${esc(gd.launch_options || "")}</textarea>
+        <div class="toolbar">${LAUNCH_PRESETS.map(([l, v]) => `<button class="b" data-preset="${esc(v)}">${esc(l)}</button>`).join("")}<span class="grow"></span><button class="b primary" data-gd="launch">Guardar</button></div>
+        <h3>Compatibilidad (Proton)</h3>
+        <div class="toolbar"><select id="gdCompat"><option value="">Predeterminada de Steam</option>${tools.map(x => `<option value="${esc(x.name)}" ${x.name === gd.compat_tool ? "selected" : ""}>${esc(x.display)}</option>`).join("")}</select>
+        <button class="b primary" data-gd="compat">Guardar</button></div>
+        ${tools.length ? "" : `<p class="sub">La lista de versiones de Proton llega con el próximo envío del plugin.</p>`}`;
+    } else {
+      const s = gd.steam || {};
+      body.innerHTML = `<h3>Acceso directo en Steam</h3>${s.emulator ? row("Emulador", esc(s.emulator)) : ""}${s.exe ? row("Ejecutable", `<code>${esc(s.exe)}</code>`) : ""}
+        <h3>Opciones de lanzamiento</h3><textarea id="gdLaunch" rows="3" spellcheck="false">${esc(s.launch_options || "")}</textarea>
+        <div class="toolbar"><span class="sub grow">${gd.source === "rom" ? "Las genera DeckHub para abrir el juego con el emulador; cámbialas solo si sabes lo que haces." : "Se reemplazan las opciones actuales del acceso directo."}</span><button class="b primary" data-gd="sc-launch">Guardar</button></div>`;
+    }
+  } else if (t === "opts") {
+    const o = [];
+    if (gd.appid) o.push(`<div class="toolbar"><label><input type="checkbox" id="gdHidden" ${gd.hidden ? "checked" : ""}> Ocultar en la biblioteca de Steam</label></div>`);
+    if (gd.source === "rom") {
+      o.push(`<div class="toolbar">${gd.appid ? `<button class="b danger" data-gd="remove">Quitar de Steam</button>` : `<button class="b primary" data-gd="add">Agregar a Steam</button>`}
+        <button class="b" data-gd="saves">Partidas guardadas</button><button class="b" data-gd="cheats">Trucos</button><button class="b" data-gd="folder">Ver en Archivos</button></div>`);
+    }
+    if (gd.source === "steam" && gd.install_dir && /^\/(home|run\/media)\//.test(gd.install_dir)) o.push(`<div class="toolbar"><button class="b" data-gd="folder">Abrir la carpeta del juego</button></div>`);
+    body.innerHTML = o.join("") || `<p class="sub">Sin opciones para este juego.</p>`;
+  }
+}
+$("gdTabs").onclick = e => { const b = e.target.closest("[data-dt]"); if (b && gd) showGameTab(b.dataset.dt); };
+$("gdClose").onclick = () => $("gameDlg").close();
+$("gameDlg").addEventListener("click", e => { if (e.target === $("gameDlg")) $("gameDlg").close(); });
+const steamDo = (action, value, msg) => act(() => api("/api/library/action", {action, appid: gd.appid, value}), msg ?? "Se aplica en Steam en unos segundos");
+$("gameDlg").addEventListener("change", async e => {
+  if (e.target.id === "gdHidden") { await steamDo("hidden", e.target.checked, e.target.checked ? "Se ocultará en la biblioteca" : "Volverá a mostrarse"); gd.hidden = e.target.checked; renderGameHead(); }
+});
+$("gameDlg").addEventListener("click", async e => {
+  const p = e.target.closest("[data-preset]");
+  if (p) { const t = $("gdLaunch"); t.value = t.value.trim() ? (t.value.includes("%command%") && p.dataset.preset.includes("%command%") ? p.dataset.preset.replace("%command%", t.value.trim()) : t.value + " " + p.dataset.preset) : p.dataset.preset; return; }
+  const b = e.target.closest("[data-gd]"); if (!b) return;
+  const a = b.dataset.gd;
+  if (a === "run") { await steamDo("run", null, `Abriendo ${gd.title} en el Deck…`); }
+  else if (a === "launch") { await steamDo("launch_options", $("gdLaunch").value.trim(), "Opciones guardadas en Steam"); gd.launch_options = $("gdLaunch").value.trim(); }
+  else if (a === "sc-launch") { await steamDo("shortcut_launch_options", $("gdLaunch").value.trim(), "Opciones guardadas en Steam"); }
+  else if (a === "compat") { await steamDo("compat_tool", $("gdCompat").value, "Compatibilidad guardada en Steam"); gd.compat_tool = $("gdCompat").value; }
+  else if (a === "add") { await steamAdd([gd.rom.path]); setTimeout(() => openGame(gd.key), 6000); }
+  else if (a === "remove") { if (!confirm(`¿Quitar «${gd.title}» de Steam? El archivo del juego no se toca.`)) return;
+    await act(() => api("/api/shortcuts/remove", {paths: [gd.rom.path]}), "Se quitará de Steam"); loadSteam(); setTimeout(() => openGame(gd.key), 6000); }
+  else if (a === "folder") { $("gameDlg").close(); openFiles((gd.rom?.path || gd.install_dir + "/x").replace(/\/[^/]+$/, "")); }
+  else if (a === "saves" || a === "cheats") { $("gameDlg").close(); document.querySelector(`#tabs button[data-tab="${a}"]`).click(); }
+});
 
 // --- Emuladores ---------------------------------------------------------------
 async function loadEmulators() {
@@ -856,59 +1076,66 @@ const KINDS = [["grid", "Portada vertical"], ["wide", "Portada horizontal"], ["h
 let cuGame = null;
 const artImg = c => c ? `<img loading="lazy" src="${preview(c.path)}&v=${c.mtime}">` : `<span class="muted">sin imagen</span>`;
 
+// Editor de carátulas de un juego: imagen actual de cada tipo + opciones de SteamGridDB.
+// g = {appid, title, shortcut}. Emite «artchange» en el contenedor al aplicar algo.
+function artEditor(el, g) {
+  el._game = g;
+  el.innerHTML = KINDS.map(([k, label]) => `<div class="artkind"><h3>${label}</h3><div class="artrow ${k}">
+    <figure data-cur="${k}">${artImg(null)}</figure><div class="gallery ${k === "grid" ? "" : "wide"}" data-kind="${k}"><p class="sub">Buscando…</p></div></div></div>`).join("")
+    + `<div class="toolbar" style="margin-top:12px"><span class="grow"></span><button class="b" data-art-reset>Restaurar originales</button></div>`;
+  const refresh = async () => {
+    const cur = await api("/api/custom/art/current?appid=" + g.appid);
+    if (el._game !== g) return;
+    for (const [k] of KINDS) {
+      const f = el.querySelector(`[data-cur="${k}"]`);
+      if (f) f.innerHTML = artImg(cur[k]) + `<figcaption>Actual · ${cur[k] ? (cur[k].custom ? "personalizada" : "original") : "—"}</figcaption>`;
+    }
+  };
+  refresh();
+  KINDS.forEach(async ([k]) => {
+    const box = el.querySelector(`[data-kind="${k}"]`);
+    try {
+      const q = new URLSearchParams({appid: g.appid, kind: k, title: g.title, shortcut: g.shortcut ? "1" : "0"});
+      const items = await api("/api/custom/art/options?" + q);
+      if (el._game !== g) return;
+      box.innerHTML = items.length
+        ? items.map(i => `<button class="pick" data-url="${esc(i.url)}" title="${esc(i.style || "")} ${i.width || ""}×${i.height || ""}"><img loading="lazy" src="${esc(i.thumb)}"></button>`).join("")
+        : `<p class="sub">SteamGridDB no tiene imágenes de este tipo.</p>`;
+    } catch (e) { box.innerHTML = `<p class="sub">Error: ${esc(e.message)}</p>`; }
+  });
+  el.onclick = async e => {
+    const pick = e.target.closest("button[data-url]");
+    if (pick) {
+      const kind = pick.closest("[data-kind]").dataset.kind;
+      await act(() => api("/api/custom/art/apply", {appid: g.appid, kind, url: pick.dataset.url}), `Aplicando en Steam: ${g.title}`);
+      pick.closest("[data-kind]").querySelectorAll(".pick").forEach(x => x.classList.toggle("on", x === pick));
+      setTimeout(() => { refresh(); el.dispatchEvent(new CustomEvent("artchange", {detail: kind})); }, 8000);
+    } else if (e.target.closest("[data-art-reset]")) {
+      if (!confirm(`¿Quitar las imágenes personalizadas de «${g.title}» y volver a las originales?`)) return;
+      await act(() => api("/api/custom/art/reset", {appid: g.appid}), "Restaurando en Steam…");
+      setTimeout(() => { refresh(); el.dispatchEvent(new CustomEvent("artchange", {detail: "all"})); }, 8000);
+    }
+  };
+}
+
 async function renderInstalled() {
   const inst = library.filter(a => a.installed).sort((a, b) => (b.last_played || 0) - (a.last_played || 0));
   if (!inst.length) { $("cuInstalled").innerHTML = `<p class="sub">Sin juegos instalados en la lista.</p>`; return; }
-  const cur = await api("/api/custom/art/current?appids=" + inst.map(a => a.appid).join(","));
   $("cuInstalled").innerHTML = inst.map(a => `<button class="pick ${cuGame?.appid === a.appid ? "on" : ""}" data-appid="${a.appid}" title="${esc(a.name)}">
-    ${cur[a.appid]?.grid ? artImg(cur[a.appid].grid) : `<span class="cap-name">${esc(a.name)}</span>`}</button>`).join("");
+    ${coverImg({appid: a.appid, title: a.name, source: a.shortcut ? "shortcut" : "steam"})}</button>`).join("");
 }
 $("cuInstalled").onclick = e => {
   const b = e.target.closest("[data-appid]"); if (!b) return;
   selectGame(library.find(a => a.appid === +b.dataset.appid));
 };
 $("cuGame").onchange = () => { const g = library.find(a => a.name === $("cuGame").value.trim()); if (g) selectGame(g); };
-
-async function selectGame(g) {
-  cuGame = g; $("cuGame").value = g.name; $("cuReset").disabled = false;
+function selectGame(g) {
+  cuGame = g; $("cuGame").value = g.name;
   $("cuInstalled").querySelectorAll(".pick").forEach(x => x.classList.toggle("on", +x.dataset.appid === g.appid));
   $("cuArtStatus").textContent = `${g.name} · ${g.shortcut ? "acceso directo" : "Steam"}${g.installed ? " · instalado" : ""}`;
-  $("cuArt").innerHTML = KINDS.map(([k, label]) => `<div class="artkind"><h3>${label}</h3><div class="artrow ${k}">
-    <figure id="cuCur-${k}">${artImg(null)}</figure><div class="gallery ${k === "grid" ? "" : "wide"}" data-kind="${k}"><p class="sub">Buscando…</p></div></div></div>`).join("");
-  refreshCurrent();
-  await Promise.all(KINDS.map(async ([k]) => {
-    const box = $("cuArt").querySelector(`[data-kind="${k}"]`);
-    try {
-      const q = new URLSearchParams({appid: g.appid, kind: k, title: g.name, shortcut: g.shortcut ? "1" : "0"});
-      const items = await api("/api/custom/art/options?" + q);
-      if (cuGame !== g) return;
-      box.innerHTML = items.length
-        ? items.map(i => `<button class="pick" data-url="${esc(i.url)}" title="${esc(i.style || "")} ${i.width || ""}×${i.height || ""}"><img loading="lazy" src="${esc(i.thumb)}"></button>`).join("")
-        : `<p class="sub">SteamGridDB no tiene imágenes de este tipo.</p>`;
-    } catch (e) { box.innerHTML = `<p class="sub">Error: ${esc(e.message)}</p>`; }
-  }));
+  artEditor($("cuArt"), {appid: g.appid, title: g.name, shortcut: g.shortcut});
 }
-async function refreshCurrent() {
-  if (!cuGame) return;
-  const cur = await api("/api/custom/art/current?appid=" + cuGame.appid);
-  for (const [k] of KINDS) {
-    const f = $("cuCur-" + k); if (!f) continue;
-    f.innerHTML = artImg(cur[k]) + `<figcaption>Actual · ${cur[k] ? (cur[k].custom ? "personalizada" : "original") : "—"}</figcaption>`;
-  }
-}
-$("cuArt").onclick = async e => {
-  const b = e.target.closest("button[data-url]"); if (!b || !cuGame) return;
-  const kind = b.closest("[data-kind]").dataset.kind;
-  await act(() => api("/api/custom/art/apply", {appid: cuGame.appid, kind, url: b.dataset.url}), `Aplicando en Steam: ${cuGame.name}`);
-  b.closest("[data-kind]").querySelectorAll(".pick").forEach(x => x.classList.toggle("on", x === b));
-  setTimeout(() => { refreshCurrent(); if (kind === "grid") renderInstalled(); }, 8000);
-};
-$("cuReset").onclick = async () => {
-  if (!cuGame) return;
-  if (!confirm(`¿Quitar las imágenes personalizadas de «${cuGame.name}» y volver a las originales?`)) return;
-  await act(() => api("/api/custom/art/reset", {appid: cuGame.appid}), "Restaurando en Steam…");
-  setTimeout(() => { refreshCurrent(); renderInstalled(); }, 8000);
-};
+$("cuArt").addEventListener("artchange", e => { if (e.detail === "grid" || e.detail === "all") renderInstalled(); });
 
 // Temas
 function renderThemes() {

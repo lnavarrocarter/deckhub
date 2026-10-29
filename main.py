@@ -186,9 +186,9 @@ class Plugin:
         except Exception:
             return False
 
-    async def report_library(self, apps):
+    async def report_library(self, apps, compat_tools=None):
         try:
-            await asyncio.to_thread(_request, "/api/steam/playtime", {"apps": apps})
+            await asyncio.to_thread(_request, "/api/steam/playtime", {"apps": apps, "compat_tools": compat_tools or []})
             return True
         except Exception:
             return False

@@ -49,6 +49,15 @@ El token está en `~/.config/deckhub/token` del Deck. Las rutas protegidas respo
 | POST | `/api/emulators/eden/firmware` | multipart (zip) o `{path}` → tarea |
 | POST | `/api/emulators/eden/keys` | multipart `prod.keys` / `title.keys` |
 
+## Biblioteca
+
+| Método | Ruta | Cuerpo / query |
+|---|---|---|
+| GET | `/api/library` | juegos de Steam, ROMs y accesos directos + versiones de Proton |
+| GET | `/api/library/detail` | `?key=steam:<appid>\|rom:<ruta>\|sc:<appid>` |
+| POST | `/api/library/action` | `{action: run\|launch_options\|shortcut_launch_options\|compat_tool\|hidden, appid, value?}` |
+| GET | `/api/custom/art/image` | `?appid=&kind=`: imagen actual (para `<img>`) |
+
 ## Accesos directos y portadas
 
 | Método | Ruta | Cuerpo |

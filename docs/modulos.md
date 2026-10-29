@@ -22,12 +22,24 @@ Busca, instala y desinstala aplicaciones Flatpak de Flathub (de usuario).
 
 ## Juegos
 
-Escanea `/run/media/deck/*`, `~/Emulation/roms` y `~/RetroHub/roms`.
+Biblioteca unificada: **juegos de Steam** (los de tu cuenta, instalados o no), **juegos de emulador** detectados en `/run/media/deck/*`, `~/Emulation/roms` y `~/RetroHub/roms`, y otros accesos directos.
 
-- Clasifica por consola según extensión y carpeta (PS2, Switch, PSP, GameCube/Wii, 3DS, etc.).
+- Vista de **portadas** (cuadrícula con la portada actual de Steam) o de **lista**.
+- Filtros por origen (Steam, Emulación, Otros), solo instalados, consola y búsqueda; orden por jugados recientemente, nombre, tiempo jugado o tamaño.
+- Insignia de compatibilidad con Steam Deck (Verificado, Jugable, No compatible).
 - **Switch**: agrupa juego base, actualizaciones y DLC por Title ID; marca la última actualización, las antiguas sobrantes y los DLC huérfanos.
-- **Añadir a Steam**: crea el acceso directo con el emulador correcto, en una colección por consola. Lo aplica el plugin de Decky en segundos.
-- Muestra si cada juego ya está en Steam y el estado de sus portadas.
+- **Agregar a Steam** los juegos de emulador: crea el acceso directo con el emulador correcto, en una colección por consola.
+
+### Detalle de un juego
+
+Al hacer clic en un juego se abre su ficha, con el fondo y el logo actuales:
+
+- **Resumen**: tiempo jugado, últimas 2 semanas, última vez, tamaño, carpeta, build, si hay una actualización pendiente, valoración de ProtonDB y AppID. En los de emulador: archivo, Title ID, versión, actualizaciones/DLC y emulador.
+- **Carátulas**: las 4 imágenes actuales y las opciones de SteamGridDB de cada tipo.
+- **Ejecución**: ▶ Jugar (abre el juego en el Deck), opciones de lanzamiento (con atajos como MangoHud o el registro de Proton) y versión de Proton. En los de emulador, las opciones del acceso directo.
+- **Opciones**: ocultar en la biblioteca de Steam, agregar/quitar de Steam, ir a partidas guardadas, trucos o a la carpeta.
+
+Los cambios los aplica el plugin dentro de Steam en unos segundos.
 
 ## Portadas (Ajustes)
 
