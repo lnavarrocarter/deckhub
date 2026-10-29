@@ -34,7 +34,7 @@ Biblioteca unificada: **juegos de Steam** (los de tu cuenta, instalados o no), *
 
 Arriba de la biblioteca aparecen las actualizaciones de Steam en espera (las que Steam programa para más tarde incluidas) con su tamaño y el botón **Descargar todo**, que las pone en cola y las inicia. El mismo botón está:
 
-- en la página **Descargas** de Steam (una barra de DeckHub arriba de la lista),
+- en la página **Descargas** de Steam (una barra de DeckHub abajo de la lista),
 - en el menú rápido del plugin (sección «Descargas», solo si hay algo pendiente).
 
 Solo cuenta la cola de este Deck, no la de otros PCs conectados.

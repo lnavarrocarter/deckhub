@@ -34,13 +34,17 @@ export function pendingDownloads() {
   return items.filter((i) => !i.completed && (i.update_type_info ?? []).some((u: any) => u.has_update && !u.completed));
 }
 
+// Igual que los botones de Steam: cada llamada lleva el equipo ("0" = este Deck).
+// QueueAppUpdate también adelanta las programadas para la ventana de actualizaciones.
+const LOCAL = "0";
+
 export async function downloadAll() {
-  const list = pendingDownloads();
+  const list = pendingDownloads().filter((i) => !i.active);
+  SteamClient.Downloads.EnableAllDownloads(true, LOCAL);
   for (const i of list) {
-    if (i.queue_index < 0) await SteamClient.Downloads.QueueAppUpdate(i.appid);
-    if (i.paused) SteamClient.Downloads.ResumeAppUpdate(i.appid);
+    if (i.queue_index < 0) await SteamClient.Downloads.QueueAppUpdate(i.appid, LOCAL);
+    if (i.paused) await SteamClient.Downloads.ResumeAppUpdate(i.appid, LOCAL);
   }
-  SteamClient.Downloads.EnableAllDownloads(true);
   return list.length;
 }
 
@@ -68,11 +72,11 @@ function DownloadAllBar() {
     const id = setInterval(() => setList(pendingDownloads()), 2000);
     return () => clearInterval(id);
   }, []);
-  const waiting = list.filter((i) => !i.active);
+  const waiting = list.filter((i) => !i.active && i.queue_index < 0);
   if (!waiting.length) return null;
   const total = waiting.reduce((n, i) => n + pendingBytes(i), 0);
   return (
-    <Focusable style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 24px 0" }}>
+    <Focusable style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px 24px 24px" }}>
       <DialogButton
         style={{ width: "auto", minWidth: "220px" }}
         disabled={busy}
@@ -103,8 +107,8 @@ export function startDownloads(): () => void {
     const original = props.children;
     props.children = (
       <>
-        <DownloadAllBar />
         {original}
+        <DownloadAllBar />
       </>
     );
     return props;

@@ -17,9 +17,9 @@ const setMounted = callable<[string, boolean], { ok: boolean; error?: string }>(
 
 // Actualizaciones de Steam en espera, con «Descargar todo».
 function Downloads() {
-  const [n, setN] = useState(pendingDownloads().filter((i) => !i.active).length);
+  const [n, setN] = useState(pendingDownloads().filter((i) => !i.active && i.queue_index < 0).length);
   useEffect(() => {
-    const id = setInterval(() => setN(pendingDownloads().filter((i) => !i.active).length), 3000);
+    const id = setInterval(() => setN(pendingDownloads().filter((i) => !i.active && i.queue_index < 0).length), 3000);
     return () => clearInterval(id);
   }, []);
   if (!n) return null;

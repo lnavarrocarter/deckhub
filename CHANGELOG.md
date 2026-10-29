@@ -1,5 +1,10 @@
 # Cambios
 
+## 0.9.1 (2026-10-29)
+
+- «Descargar todo» ya inicia las descargas: las llamadas a Steam llevan el equipo (este Deck), como hace la propia interfaz de Steam. Adelanta también las programadas por la restricción horaria de actualizaciones.
+- La barra de «Descargar todo» se muestra abajo de la lista de Descargas.
+
 ## 0.9.0 (2026-10-29)
 
 - «Descargar todo»: pone en cola e inicia todas las actualizaciones pendientes de Steam. Disponible en la página Descargas de Steam, en el menú rápido y en la pestaña Juegos del panel.

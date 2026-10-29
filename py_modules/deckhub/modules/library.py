@@ -187,7 +187,7 @@ def downloads():
         d = json.loads(DOWNLOADS.read_text())
     except (OSError, ValueError):
         return {"updated": None, "items": [], "pending": 0, "bytes": 0}
-    pend = [i for i in d["items"] if not i.get("completed") and not i.get("active")]
+    pend = [i for i in d["items"] if not i.get("completed") and not i.get("active") and not i.get("queued")]
     return {**d, "pending": len(pend), "bytes": sum(int(i.get("bytes") or 0) for i in pend)}
 
 
