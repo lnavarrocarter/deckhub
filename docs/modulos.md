@@ -70,6 +70,15 @@ Comprobaciones: el zip debe tener al menos 20 `.nca`, las llaves deben contener 
 - **Restaurar**: antes de restaurar se hace una copia de lo actual.
 - **Migrar de yuzu a Eden**: copia partidas y perfil.
 
+## Ofertas
+
+Seguimiento de precios de la tienda de Steam, en la moneda de tu región (se detecta sola; se puede cambiar).
+
+- **Importar mi lista de deseados** (el perfil debe tener los detalles de juegos públicos) o **buscar** cualquier juego y seguirlo.
+- Por juego: precio actual, descuento y hasta cuándo, compatibilidad con Steam Deck, reseñas y **mínimo histórico**. Sin clave, es el más bajo que DeckHub ha visto; con una clave gratuita de [IsThereAnyDeal](https://isthereanydeal.com/apps/my/), el mínimo histórico real en Steam para tu región.
+- **Alertas**: precio objetivo y/o «avisar en mínimo histórico». El daemon revisa cada 6 horas y el plugin muestra una notificación en el Deck; al tocarla abre el juego en la tienda.
+- Solo lectura: DeckHub nunca compra ni toca tu cuenta.
+
 ## Personalización
 
 - **Portadas de la biblioteca**: tus juegos instalados aparecen con su portada actual. Al elegir uno (o buscar cualquier juego de la biblioteca) se ven sus 4 imágenes actuales (portada vertical, horizontal, fondo y logo; marcadas como originales o personalizadas) y las opciones de SteamGridDB de cada tipo. Un clic aplica la imagen en Steam. «Restaurar originales» quita las personalizadas.

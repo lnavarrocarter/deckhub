@@ -56,6 +56,12 @@ Objetivo: que DeckHub abarque la mayor parte de la configuración del Deck, desd
 - [ ] Ocultar/mostrar juegos y gestionar colecciones desde el panel.
 - [ ] Tiempo de juego de los accesos directos de emuladores (Steam no lo registra; medirlo con el daemon mientras el emulador está abierto).
 
+## Tienda de Steam
+
+- [x] **Fase 1**: seguimiento de precios (lista de deseados o búsqueda), mínimo histórico (DeckHub / IsThereAnyDeal) y alertas en el Deck.
+- [ ] **Fase 2**: perfil de gustos a partir de las horas jugadas (etiquetas) y recomendaciones entre ofertas y más vendidos, con «no me interesa» / «seguir».
+- [ ] **Fase 3**: datos dentro de la tienda de Steam en el Deck (mínimo histórico, afinidad, ProtonDB, botón seguir).
+
 ## Mejoras pendientes
 
 - [ ] Acelerar la pestaña Emuladores (hoy tarda ~10 s revisando permisos Flatpak uno a uno).

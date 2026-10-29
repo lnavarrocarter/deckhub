@@ -1,5 +1,10 @@
 # Cambios
 
+## 0.8.0 (2026-10-29)
+
+- Pestaña «Ofertas»: seguimiento de precios de Steam en tu moneda (lista de deseados o búsqueda), descuento y fin de la oferta, compatibilidad con Deck, reseñas y mínimo histórico (DeckHub o IsThereAnyDeal).
+- Alertas por precio objetivo o mínimo histórico; revisión cada 6 horas y notificación en el Deck que abre la tienda.
+
 ## 0.7.0 (2026-10-29)
 
 - Pestaña Juegos rehecha: biblioteca unificada (Steam + emulación + accesos directos) en cuadrícula de portadas o lista, con filtros, orden e insignia de compatibilidad con Steam Deck.

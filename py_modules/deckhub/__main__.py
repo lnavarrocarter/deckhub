@@ -8,7 +8,7 @@ from pathlib import Path
 from aiohttp import web
 
 from . import VERSION, auth, config, routes
-from .modules import MODULES, artwork, saves, storage
+from .modules import MODULES, artwork, saves, storage, store
 
 log = logging.getLogger("deckhub")
 WEB = Path(__file__).parent / "web"
@@ -53,6 +53,7 @@ async def _start_automount(app):
     app["automount"] = asyncio.create_task(_automount_loop())
     app["artwork"] = asyncio.create_task(artwork.loop())
     app["backups"] = asyncio.create_task(saves.daily_loop())
+    app["store"] = asyncio.create_task(store.loop())
 
 
 def main():

@@ -132,6 +132,13 @@
   .gbody textarea { width: 100%; font: 13px ui-monospace, monospace; padding: 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--text); margin-bottom: 8px; }
   code { font: 12px ui-monospace, monospace; background: var(--hover); padding: 1px 4px; border-radius: 4px; }
   @media (max-width: 640px) { .libgrid { grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 10px; } .ghead { flex-direction: column; align-items: flex-start; } }
+  /* Ofertas */
+  table.store td { vertical-align: middle; }
+  .capsule { width: 140px; border-radius: 4px; display: block; }
+  .disc { background: #4c6b22; color: #beee11; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
+  tr.atlow td { background: rgba(34,160,107,.08); }
+  input.target { width: 120px; font: inherit; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text); }
+  @media (max-width: 640px) { .capsule { width: 90px; } }
 </style>
 </head>
 <body>
@@ -148,6 +155,7 @@
     <button data-tab="games">Juegos</button>
     <button data-tab="emulators">Emuladores</button>
     <button data-tab="saves">Partidas</button>
+    <button data-tab="store">Ofertas</button>
     <button data-tab="custom">Personalización</button>
     <button data-tab="playtime">Tiempo de juego</button>
     <button data-tab="cheats">Trucos</button>
@@ -285,6 +293,37 @@
       <h2>Buscar en Flathub</h2>
       <form class="toolbar" id="pkgSearchForm"><input type="search" id="pkgQuery" placeholder="ej. retroarch, dolphin, ppsspp" class="grow"><button class="b primary">Buscar</button></form>
       <div id="pkgResults"></div>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-store">
+    <div class="card">
+      <h2>Ofertas y seguimiento de precios</h2>
+      <p class="sub" style="margin-top:0" id="stStatus"></p>
+      <div class="toolbar">
+        <button class="b primary" id="stImport">Importar mi lista de deseados</button>
+        <button class="b" id="stRefresh">Revisar precios ahora</button>
+        <span class="grow"></span>
+        <label class="sub"><input type="checkbox" id="stOnlySale"> Solo en oferta</label>
+      </div>
+      <div class="toolbar">
+        <input id="stSearch" class="grow" placeholder="Agregar un juego: busca en la tienda de Steam">
+        <button class="b" id="stSearchGo">Buscar</button>
+      </div>
+      <div id="stResults"></div>
+      <div id="stList"></div>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <h2>Alertas recientes</h2>
+        <div id="stNotes"></div>
+      </div>
+      <div class="card">
+        <h2>Ajustes de la tienda</h2>
+        <div class="toolbar"><span class="sub">País</span><input type="text" id="stCountry" maxlength="2" style="width:60px"><button class="b" id="stCountrySave">Guardar</button></div>
+        <p class="sub">Mínimo histórico más preciso con <a href="https://isthereanydeal.com/apps/my/" target="_blank">IsThereAnyDeal</a> (clave gratuita). Sin clave se usa el precio más bajo que DeckHub ha visto.</p>
+        <form class="toolbar" id="stItadForm"><input type="password" id="stItad" class="grow" autocomplete="off"><button class="b">Guardar clave</button></form>
+      </div>
     </div>
   </section>
 
@@ -1054,6 +1093,93 @@ function renderPlaytime() {
 $("ptFilter").onchange = renderPlaytime;
 $("ptSearch").oninput = renderPlaytime;
 loaders.playtime = loadPlaytime;
+
+// --- Ofertas ---------------------------------------------------------------------
+let store = null;
+const money = (cents, cur) => cents == null ? "—" : new Intl.NumberFormat(undefined, {style: "currency", currency: cur || "USD",
+  maximumFractionDigits: ["CLP", "JPY", "COP", "CRC"].includes(cur) ? 0 : 2}).format(cents / 100);
+const capsule = appid => `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/capsule_231x87.jpg`;
+
+async function loadStore() {
+  store = await api("/api/store");
+  $("stStatus").textContent = `${store.items.length} juegos en seguimiento · tienda ${store.country || "—"} (${store.currency})` +
+    ` · ${store.last_check ? "revisado " + dt(store.last_check) : "aún sin revisar"} · se revisa cada 6 horas y el plugin te avisa en el Deck.`;
+  if (document.activeElement !== $("stCountry")) $("stCountry").value = store.country || "";
+  $("stItad").placeholder = store.itad_key_set ? "Clave guardada · escribe otra para cambiarla" : "Pega tu clave de IsThereAnyDeal (opcional)";
+  renderStore();
+  $("stNotes").innerHTML = store.notifications.length
+    ? store.notifications.map(n => `<div class="row"><span>${esc(n.title)}<br><span class="sub">${esc(n.body)}</span></span><span class="sub">${dt(n.time)}</span></div>`).join("")
+    : `<p class="sub">Todavía no hay alertas.</p>`;
+}
+function renderStore() {
+  if (!store) return;
+  const cur = store.currency;
+  const list = store.items.filter(i => !$("stOnlySale").checked || i.price.discount);
+  $("stList").innerHTML = list.length ? `<table class="store"><thead><tr><th></th><th>Juego</th><th class="num">Precio</th><th class="num">Mínimo histórico</th><th>Avisarme</th><th></th></tr></thead><tbody>${list.map(i => {
+    const p = i.price;
+    const price = !p.purchasable ? `<span class="sub">${p.free ? "Gratis" : "No disponible"}</span>`
+      : `${p.discount ? `<span class="disc">-${p.discount}%</span> <s class="sub">${esc(p.formatted_initial || money(p.initial, cur))}</s><br>` : ""}<b>${esc(p.formatted || money(p.final, cur))}</b>${p.discount_end ? `<br><span class="sub">hasta ${date(p.discount_end)}</span>` : ""}`;
+    return `<tr class="${i.at_low ? "atlow" : ""}">
+      <td><a href="${esc(p.url || "https://store.steampowered.com/app/" + i.appid)}" target="_blank"><img class="capsule" loading="lazy" src="${capsule(i.appid)}" alt=""></a></td>
+      <td class="name"><b>${esc(i.name)}</b><br>${p.deck ? `<span class="tag ${p.deck === "Verificado" ? "ok" : p.deck === "Jugable" ? "warn" : "bad"}">Deck: ${esc(p.deck)}</span> ` : ""}
+        ${p.reviews ? `<span class="sub">${esc(p.reviews)}${p.reviews_pct ? ` (${p.reviews_pct}%)` : ""}</span>` : ""}${i.source === "wishlist" ? ` <span class="tag">deseado</span>` : ""}</td>
+      <td class="num">${price}</td>
+      <td class="num">${i.low ? money(i.low, cur) : "—"}${i.at_low ? `<br><span class="tag ok">¡en mínimo!</span>` : i.low ? `<br><span class="sub">${esc(i.low_source)}</span>` : ""}</td>
+      <td><div class="toolbar" style="margin:0"><input type="number" min="0" step="any" class="target" data-st-target="${i.appid}" placeholder="Precio objetivo" value="${i.target ? i.target / 100 : ""}">
+        <label class="sub"><input type="checkbox" data-st-low="${i.appid}" ${i.notify_low ? "checked" : ""}> en mínimo</label></div></td>
+      <td class="num"><button class="b" data-st-remove="${i.appid}" title="Dejar de seguir">✕</button></td></tr>`;
+  }).join("")}</tbody></table>`
+    : `<p class="sub">${store.items.length ? "Ningún juego en oferta ahora." : "Importa tu lista de deseados o busca un juego para empezar."}</p>`;
+}
+const stSave = async appid => {
+  const t = document.querySelector(`[data-st-target="${appid}"]`).value, low = document.querySelector(`[data-st-low="${appid}"]`).checked;
+  await act(() => api("/api/store/track", {appid, target: t === "" ? null : Math.round(parseFloat(t) * 100), notify_low: low}), "Alerta guardada");
+  loadStore();
+};
+$("stList").addEventListener("change", e => {
+  const id = e.target.dataset.stTarget || e.target.dataset.stLow; if (id) stSave(+id);
+});
+$("stList").onclick = async e => {
+  const b = e.target.closest("[data-st-remove]"); if (!b) return;
+  await act(() => api("/api/store/untrack", {appid: +b.dataset.stRemove}), "Ya no se sigue"); loadStore();
+};
+$("stOnlySale").onchange = renderStore;
+$("stImport").onclick = async () => {
+  $("stImport").disabled = true;
+  try { const r = await act(() => api("/api/store/import", {})); toast(`Lista de deseados: ${r.total} juegos (${r.new} nuevos)`); await loadStore(); } catch {}
+  $("stImport").disabled = false;
+};
+$("stRefresh").onclick = async () => {
+  $("stRefresh").disabled = true;
+  try { const r = await act(() => api("/api/store/refresh", {})); toast(`Precios revisados: ${r.checked} juegos`); await loadStore(); } catch {}
+  $("stRefresh").disabled = false;
+};
+async function stSearch() {
+  const q = $("stSearch").value.trim(); if (!q) return;
+  $("stResults").innerHTML = `<p class="sub">Buscando…</p>`;
+  try {
+    const r = await api("/api/store/search?q=" + encodeURIComponent(q));
+    $("stResults").innerHTML = r.length ? `<table><tbody>${r.map(g => `<tr><td><img class="capsule" src="${esc(g.image || capsule(g.appid))}" alt=""></td>
+      <td class="name">${esc(g.name)}</td><td class="num">${g.price != null ? money(g.price, g.currency) : "—"}</td>
+      <td class="num">${g.tracked ? `<span class="sub">ya lo sigues</span>` : `<button class="b primary" data-st-add="${g.appid}">Seguir</button>`}</td></tr>`).join("")}</tbody></table>`
+      : `<p class="sub">Sin resultados.</p>`;
+  } catch (e) { $("stResults").innerHTML = `<p class="sub">Error: ${esc(e.message)}</p>`; }
+}
+$("stSearchGo").onclick = stSearch;
+$("stSearch").onkeydown = e => { if (e.key === "Enter") stSearch(); };
+$("stResults").onclick = async e => {
+  const b = e.target.closest("[data-st-add]"); if (!b) return;
+  b.disabled = true;
+  await act(() => api("/api/store/track", {appid: +b.dataset.stAdd, notify_low: true}), "Siguiendo el precio");
+  b.outerHTML = `<span class="sub">siguiendo</span>`; loadStore();
+};
+$("stCountrySave").onclick = async () => { await act(() => api("/api/settings", {store_country: $("stCountry").value}), "País guardado"); loadStore(); };
+$("stItadForm").onsubmit = async e => {
+  e.preventDefault();
+  const key = $("stItad").value.trim(); if (!key) return;
+  try { await act(() => api("/api/settings", {itad_key: key}), "Clave válida y guardada"); $("stItad").value = ""; loadStore(); } catch {}
+};
+loaders.store = loadStore;
 
 // --- Personalización ------------------------------------------------------------
 let custom = null, library = [], thPage = 1;

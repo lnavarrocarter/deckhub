@@ -49,6 +49,21 @@ El token está en `~/.config/deckhub/token` del Deck. Las rutas protegidas respo
 | POST | `/api/emulators/eden/firmware` | multipart (zip) o `{path}` → tarea |
 | POST | `/api/emulators/eden/keys` | multipart `prod.keys` / `title.keys` |
 
+## Ofertas
+
+| Método | Ruta | Cuerpo / query |
+|---|---|---|
+| GET | `/api/store` | juegos seguidos, precios, mínimos, alertas |
+| POST | `/api/store/import` | importa la lista de deseados de Steam |
+| POST | `/api/store/refresh` | revisa precios ahora |
+| GET | `/api/store/search` | `?q=` |
+| POST | `/api/store/track` | `{appid, target?, notify_low?}` (`target` en centavos) |
+| POST | `/api/store/untrack` | `{appid}` |
+| GET | `/api/store/notifications` | alertas pendientes (las entrega el plugin) |
+| POST | `/api/store/notifications/ack` | `{id}` |
+
+`/api/settings` acepta también `store_country` (código de 2 letras) e `itad_key`.
+
 ## Biblioteca
 
 | Método | Ruta | Cuerpo / query |

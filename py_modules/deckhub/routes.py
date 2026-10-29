@@ -8,7 +8,7 @@ from aiohttp import web
 
 from . import fileops, jobs
 from . import config
-from .modules import artwork, cheats, custom, emulators, library, packages, playtime, roms, saves, shortcuts, storage
+from .modules import artwork, cheats, custom, emulators, library, packages, playtime, store, roms, saves, shortcuts, storage
 
 
 def _ok(data=None, **extra):
@@ -223,6 +223,42 @@ async def library_action(request):
     return _ok()
 
 
+async def store_get(request):
+    return _ok(store.collect())
+
+
+async def store_refresh(request):
+    return _ok(await store.refresh())
+
+
+async def store_import(request):
+    return _ok(await store.import_wishlist())
+
+
+async def store_search(request):
+    return _ok(await store.search(request.query.get("q", "")))
+
+
+async def store_track(request):
+    b = await _body(request)
+    await store.track(b["appid"], b.get("target"), b.get("notify_low", True))
+    return _ok()
+
+
+async def store_untrack(request):
+    store.untrack((await _body(request))["appid"])
+    return _ok()
+
+
+async def store_notifications(request):
+    return _ok(store.pending_notifications())
+
+
+async def store_notifications_ack(request):
+    store.ack_notification((await _body(request))["id"])
+    return _ok()
+
+
 async def art_image(request):
     """Imagen actual de un juego (para <img>); 404 si Steam no tiene ninguna."""
     cur = custom.art_current(request.query.get("appid", "0")).get(request.query.get("kind", "grid"))
@@ -382,7 +418,8 @@ async def settings_get(request):
     return _ok({"steamgriddb_key_set": bool(k), "steamgriddb_key_hint": f"…{k[-4:]}" if k else "",
                 "auto_artwork": cfg["auto_artwork"], "backup_daily": cfg["backup_daily"],
                 "backup_keep": cfg["backup_keep"], "artwork_net": artwork.net_status(),
-                "lan_access": cfg["lan_access"]})
+                "lan_access": cfg["lan_access"], "store_country": cfg.get("store_country", ""),
+                "itad_key_set": bool(cfg.get("itad_key"))})
 
 
 async def settings_set(request):
@@ -402,6 +439,19 @@ async def settings_set(request):
                     raise ValueError(str(e))
                 raise ValueError(f"No pude validar la clave: {artwork.describe(e)}.")
             artwork.retry_now()
+    if "itad_key" in b:
+        key = str(b["itad_key"]).strip()
+        if key:
+            try:
+                await store.check_itad_key(key)
+            except Exception as e:
+                raise ValueError(f"No pude validar la clave de IsThereAnyDeal: {e}")
+        cfg["itad_key"] = key
+    if "store_country" in b:
+        cc = str(b["store_country"]).strip().upper()
+        if cc and (len(cc) != 2 or not cc.isalpha()):
+            raise ValueError("País no válido: usa el código de 2 letras (CL, MX, US…).")
+        cfg["store_country"] = cc
     for k in ("auto_artwork", "backup_daily"):
         if k in b:
             cfg[k] = bool(b[k])
@@ -518,6 +568,14 @@ def setup(app):
     r.add_post("/api/shortcuts/art/refresh", art_refresh)
     r.add_get("/api/steam/playtime", playtime_get)
     r.add_post("/api/steam/playtime", playtime_report)
+    r.add_get("/api/store", store_get)
+    r.add_post("/api/store/refresh", store_refresh)
+    r.add_post("/api/store/import", store_import)
+    r.add_get("/api/store/search", store_search)
+    r.add_post("/api/store/track", store_track)
+    r.add_post("/api/store/untrack", store_untrack)
+    r.add_get("/api/store/notifications", store_notifications)
+    r.add_post("/api/store/notifications/ack", store_notifications_ack)
     r.add_get("/api/library", library_list)
     r.add_get("/api/library/detail", library_detail)
     r.add_post("/api/library/action", library_action)

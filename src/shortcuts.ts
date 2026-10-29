@@ -133,6 +133,23 @@ async function applyActions() {
   if (cssChanged) await refreshCssLoaderUI().catch((e) => console.warn("DeckHub: CSS Loader", e));
 }
 
+type StoreNotification = { id: string; appid: number; title: string; body: string };
+const getStoreNotifications = callable<[], StoreNotification[]>("get_store_notifications");
+const ackStoreNotification = callable<[string], boolean>("ack_store_notification");
+
+// Alertas de precio de la pestaña Ofertas: notificación de Steam que abre la tienda.
+async function applyStoreNotifications() {
+  for (const n of await getStoreNotifications()) {
+    await ackStoreNotification(n.id);
+    toaster.toast({
+      title: `💰 ${n.title}`,
+      body: n.body,
+      duration: 8000,
+      onClick: () => SteamClient.URL.ExecuteSteamURL(`steam://store/${n.appid}`),
+    });
+  }
+}
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function overview(appid: number) {
@@ -199,6 +216,7 @@ export async function syncShortcuts() {
     }
     const art = await applyArt();
     await applyActions();
+    await applyStoreNotifications();
     if (added || removed || art) {
       const parts = [
         added && `${added} juegos añadidos`,

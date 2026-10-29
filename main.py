@@ -172,6 +172,20 @@ class Plugin:
         except Exception:
             return False
 
+    async def get_store_notifications(self):
+        try:
+            r = await asyncio.to_thread(_request, "/api/store/notifications")
+            return r.get("data", [])
+        except Exception:
+            return []
+
+    async def ack_store_notification(self, nid):
+        try:
+            await asyncio.to_thread(_request, "/api/store/notifications/ack", {"id": nid})
+            return True
+        except Exception:
+            return False
+
     async def get_pending_actions(self):
         try:
             r = await asyncio.to_thread(_request, "/api/decky/actions/pending")
