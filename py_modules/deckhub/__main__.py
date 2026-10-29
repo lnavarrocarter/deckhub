@@ -7,7 +7,7 @@ from pathlib import Path
 
 from aiohttp import web
 
-from . import VERSION, auth, config, routes
+from . import VERSION, auth, config, i18n, routes
 from .modules import MODULES, artwork, saves, storage, store
 
 log = logging.getLogger("deckhub")
@@ -33,6 +33,10 @@ async def api_module(request):
     if name not in MODULES:
         raise web.HTTPNotFound(text=f"módulo desconocido: {name}")
     return web.json_response(await _safe(name, MODULES[name]))
+
+
+async def api_i18n(request):
+    return web.json_response(i18n.info())
 
 
 async def index(request):
@@ -70,6 +74,7 @@ def main():
     app.router.add_get("/", index)
     app.router.add_get("/api", api_all)
     app.router.add_get("/api/auth", auth.auth_status)
+    app.router.add_get("/api/i18n", api_i18n)
     app.router.add_post("/api/auth", auth.auth_login)
     routes.setup(app)  # antes de /api/{name} para que sus rutas tengan prioridad
     app.router.add_get("/api/{name}", api_module)

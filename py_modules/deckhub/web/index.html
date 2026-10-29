@@ -139,32 +139,62 @@
   tr.atlow td { background: rgba(34,160,107,.08); }
   input.target { width: 120px; font: inherit; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--text); }
   @media (max-width: 640px) { .capsule { width: 90px; } }
+  /* Navegación agrupada: barra lateral en pantallas anchas, fila desplazable en móvil */
+  header .grow { flex: 1; }
+  .logo { color: var(--accent); }
+  .langsel select { margin-left: 4px; }
+  .navgroup { display: none; }
+  @media (min-width: 1000px) {
+    .wrap { max-width: 1440px; display: grid; grid-template-columns: 200px minmax(0, 1fr); column-gap: 28px; }
+    header { grid-column: 1 / -1; }
+    nav#tabs { grid-column: 1; grid-row: 2 / span 40; flex-direction: column; align-self: start; position: sticky; top: 12px; border-bottom: 0; margin-top: 18px; gap: 2px; overflow: visible; }
+    nav#tabs button { text-align: left; border-bottom: 0; border-left: 3px solid transparent; border-radius: 0 6px 6px 0; padding: 7px 12px; }
+    nav#tabs button.on { border-left-color: var(--accent); background: var(--hover); }
+    nav#tabs button:hover { background: var(--hover); color: var(--text); }
+    .navgroup { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 14px 12px 4px; }
+    section.tab { grid-column: 2; padding-top: 18px; }
+  }
+  .onboard .step { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); }
+  .onboard .step:first-child { border-top: 0; }
+  .onboard .step .ic { width: 22px; text-align: center; }
+  .onboard .step.done { opacity: .6; }
+  .onboard .step .grow { flex: 1; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>DeckHub</h1>
+    <h1><span class="logo">◆</span> DeckHub</h1>
     <span class="sub" id="os">conectando…</span>
     <span class="sub"><i class="dot" id="live"></i><span id="updated"></span></span>
+    <span class="grow"></span>
+    <label class="sub langsel">🌐 <select id="langSel" aria-label="Idioma"><option value="auto">Automático (idioma de Steam)</option></select></label>
   </header>
   <nav id="tabs">
+    <span class="navgroup">Inicio</span>
     <button data-tab="summary" class="on">Resumen</button>
-    <button data-tab="drives">Unidades y espacio</button>
-    <button data-tab="files">Archivos</button>
+    <span class="navgroup">Juegos</span>
     <button data-tab="games">Juegos</button>
-    <button data-tab="emulators">Emuladores</button>
-    <button data-tab="saves">Partidas</button>
+    <button data-tab="playtime">Tiempo de juego</button>
     <button data-tab="store">Ofertas</button>
     <button data-tab="custom">Personalización</button>
-    <button data-tab="playtime">Tiempo de juego</button>
+    <span class="navgroup">Emulación</span>
+    <button data-tab="emulators">Emuladores</button>
+    <button data-tab="saves">Partidas</button>
     <button data-tab="cheats">Trucos</button>
+    <span class="navgroup">Sistema</span>
+    <button data-tab="drives">Unidades y espacio</button>
+    <button data-tab="files">Archivos</button>
     <button data-tab="packages">Paquetes</button>
     <button data-tab="jobs">Tareas<span class="badge" id="jobsBadge" hidden></span></button>
     <button data-tab="settings">Ajustes</button>
   </nav>
 
   <section class="tab on" id="tab-summary">
+    <div class="card onboard" id="onboard" hidden>
+      <div class="toolbar" style="margin:0 0 6px"><h2 class="grow" style="margin:0">Primeros pasos</h2><button class="b" id="onboardHide">Ocultar</button></div>
+      <div id="onboardList"></div>
+    </div>
     <div class="grid">
       <div class="card"><h2>CPU</h2><div id="cpu"></div></div>
       <div class="card"><h2>GPU y energía</h2><div id="gpu"></div></div>
@@ -412,7 +442,7 @@
 <dialog id="tokenDlg">
   <form method="dialog" id="tokenForm">
     <strong>Token de DeckHub</strong>
-    <p class="sub" style="margin:6px 0 0">Las acciones que modifican el Deck piden el token. En el Deck: <code>cat ~/.config/deckhub/token</code></p>
+    <p class="sub" style="margin:6px 0 0">Las acciones que modifican el Deck piden el token. Lo ves en el plugin de DeckHub (Mostrar token) o en el Deck: <code>cat ~/.config/deckhub/token</code></p>
     <input type="password" id="tokenInput" autocomplete="off" required>
     <div class="toolbar"><span class="grow err" id="tokenErr"></span><button class="b" type="button" onclick="this.closest('dialog').close()">Cancelar</button><button class="b primary" value="ok">Entrar</button></div>
   </form>
@@ -429,7 +459,63 @@ const meter = (pct, warn = 75, bad = 90) =>
   `<div class="meter ${pct >= bad ? "bad" : pct >= warn ? "warn" : ""}"><i style="width:${Math.min(pct ?? 0, 100)}%"></i></div>`;
 const dur = s => { const d = Math.floor(s/86400), h = Math.floor(s%86400/3600), m = Math.floor(s%3600/60); return (d ? d+"d " : "") + h+"h "+m+"m"; };
 const date = t => new Date(t * 1000).toLocaleDateString(undefined, {year: "2-digit", month: "short", day: "numeric"});
-const toast = msg => { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("on"), 3500); };
+// --- Idiomas -----------------------------------------------------------------
+let LANG = "es", DICT = new Map(), PATTERNS = [];
+const reEsc = x => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function tr(text) {
+  if (LANG === "es" || text == null) return text;
+  const str = String(text);
+  if (str.includes("\n")) return str.split("\n").map(tr).join("\n");
+  const m = str.match(/^(\s*)([\s\S]*?)(\s*)$/), core = m[2];
+  if (!core) return str;
+  if (DICT.has(core)) return m[1] + DICT.get(core) + m[3];
+  for (const [re, out] of PATTERNS) {
+    const g = core.match(re);
+    if (g) { let i = 1; return m[1] + out.replace(/\{\}/g, () => tr(g[i++] ?? "")) + m[3]; }
+  }
+  return str;
+}
+const I18N_ATTRS = ["placeholder", "title", "aria-label", "label"];
+function translateTree(root) {
+  if (LANG === "es") return;
+  if (root.nodeType === 3) { const t = tr(root.data); if (t !== root.data) root.data = t; return; }
+  if (root.nodeType !== 1 || root.closest?.("script,style,textarea,code,[data-noi18n]")) return;
+  for (const a of I18N_ATTRS) if (root.hasAttribute?.(a)) { const v = root.getAttribute(a), t = tr(v); if (t !== v) root.setAttribute(a, t); }
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT, {
+    acceptNode: n => n.nodeType === 1 && n.matches("script,style,textarea,code,[data-noi18n]") ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT});
+  for (let n = w.nextNode(); n; n = w.nextNode()) {
+    if (n.nodeType === 3) { const t = tr(n.data); if (t !== n.data) n.data = t; }
+    else for (const a of I18N_ATTRS) if (n.hasAttribute(a)) { const v = n.getAttribute(a), t = tr(v); if (t !== v) n.setAttribute(a, t); }
+  }
+}
+async function initI18n() {
+  let info;
+  try { info = await (await fetch("/api/i18n")).json(); } catch { return; }
+  $("langSel").innerHTML = `<option value="auto">Automático (idioma de Steam)</option>` +
+    info.available.map(l => `<option value="${l.code}">${l.name}</option>`).join("");
+  $("langSel").value = info.choice;
+  LANG = info.lang; document.documentElement.lang = LANG;
+  if (LANG === "es") return;
+  for (const [k, v] of Object.entries(info.dict)) {
+    if (k.startsWith("_")) continue;
+    if (k.includes("{}")) PATTERNS.push([new RegExp("^" + k.split("{}").map(reEsc).join("([\\s\\S]+?)") + "$"), v]);
+    else DICT.set(k, v);
+  }
+  PATTERNS.sort((a, b) => b[0].source.length - a[0].source.length); // los más específicos primero
+  translateTree(document.body);
+  new MutationObserver(ms => { for (const m of ms) {
+    if (m.type === "characterData") translateTree(m.target);
+    else if (m.type === "attributes") translateTree(m.target);
+    else m.addedNodes.forEach(translateTree);
+  } }).observe(document.body, {subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: I18N_ATTRS});
+  for (const fn of ["confirm", "prompt", "alert"]) { const orig = window[fn].bind(window); window[fn] = (msg, ...r) => orig(tr(msg), ...r); }
+}
+$("langSel").onchange = async () => {
+  try { await api("/api/settings", {ui_lang: $("langSel").value}); } catch { return; }
+  location.reload();
+};
+
+const toast = msg => { const t = $("toast"); t.textContent = tr(msg); t.classList.add("on"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("on"), 3500); };
 
 // --- API con token -----------------------------------------------------------
 let tokenPrompt = null;
@@ -1595,7 +1681,30 @@ async function pollJobs() {
 }
 loaders.jobs = pollJobs;
 
+// --- Primeros pasos ---------------------------------------------------------------
+async function loadOnboarding() {
+  try { if (localStorage.getItem("deckhub.onboard.hidden")) return; } catch {}
+  // Sin sesión no se muestra (y no se pide el token solo por abrir la página).
+  try { if (!(await (await fetch("/api/auth")).json()).authed) return; } catch { return; }
+  let st, lib, cu, store;
+  try { [st, lib, cu, store] = await Promise.all([api("/api/settings"), api("/api/library"), api("/api/custom"), api("/api/store")]); } catch { return; }
+  const steps = [
+    [lib.updated && Date.now() / 1000 - lib.updated < 900, "Plugin de Decky conectado", "Abre Steam en el Deck: el plugin envía tu biblioteca en unos segundos.", null],
+    [st.steamgriddb_key_set, "Clave de SteamGridDB para portadas", "Gratis en steamgriddb.com; sin ella los juegos de emulador quedan sin portada.", "settings"],
+    [cu.themes.css_loader, "CSS Loader para temas", "Se instala con un clic desde Personalización.", "custom"],
+    [store.wishlist_sync, "Lista de deseados importada", "Para recibir alertas cuando bajen de precio.", "store"],
+  ];
+  if (steps.every(s => s[0])) { $("onboard").hidden = true; return; }
+  $("onboard").hidden = false;
+  $("onboardList").innerHTML = steps.map(([ok, title, hint, tabName]) => `<div class="step ${ok ? "done" : ""}">
+    <span class="ic">${ok ? "✅" : "⬜"}</span><span class="grow"><b>${title}</b><br><span class="sub">${hint}</span></span>
+    ${!ok && tabName ? `<button class="b" data-go="${tabName}">Ir</button>` : ""}</div>`).join("");
+}
+$("onboardList").onclick = e => { const b = e.target.closest("[data-go]"); if (b) document.querySelector(`#tabs button[data-tab="${b.dataset.go}"]`).click(); };
+$("onboardHide").onclick = () => { try { localStorage.setItem("deckhub.onboard.hidden", "1"); } catch {} $("onboard").hidden = true; };
+
 // --- Inicio -------------------------------------------------------------------
+initI18n().then(() => loadOnboarding());
 tick(); setInterval(tick, 2000);
 try { const t = localStorage.getItem("deckhub.tab"); if (t && t !== "summary") document.querySelector(`#tabs button[data-tab="${t}"]`)?.click(); } catch {}
 </script>

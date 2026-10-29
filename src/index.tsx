@@ -1,8 +1,10 @@
-import { ButtonItem, Field, PanelSection, PanelSectionRow, ToggleField, staticClasses } from "@decky/ui";
+import { ButtonItem, Field, Navigation, PanelSection, PanelSectionRow, ToggleField, staticClasses } from "@decky/ui";
 import { callable, definePlugin, toaster } from "@decky/api";
 import { useEffect, useState } from "react";
 import { FaHeartbeat } from "react-icons/fa";
+import qrcode from "qrcode-generator";
 import { downloadAll, pendingDownloads, startDownloads } from "./downloads";
+import { initLanguage, t } from "./i18n";
 import { startLibraryReport } from "./library";
 import { startShortcutSync } from "./shortcuts";
 
@@ -15,32 +17,50 @@ const setLanAccess = callable<[boolean], { ok: boolean; error?: string }>("set_l
 const restartDaemon = callable<[], { ok: boolean; error?: string }>("restart_daemon");
 const setMounted = callable<[string, boolean], { ok: boolean; error?: string }>("set_mounted");
 
+const gb = (b?: number) =>
+  b == null ? "—" : b >= 1e12 ? `${(b / 1e12).toFixed(2)} TB` : `${(b / 1e9).toFixed(1)} GB`;
+const v = (x: unknown, unit = "") => (x == null ? "—" : `${x}${unit}`);
+
+// Código QR de la dirección del panel, para abrirlo desde el móvil sin teclear.
+function QrCode({ text }: { text: string }) {
+  const qr = qrcode(0, "M");
+  qr.addData(text);
+  qr.make();
+  return (
+    <div
+      style={{ background: "#fff", padding: "8px", borderRadius: "6px", width: "fit-content", margin: "0 auto" }}
+      dangerouslySetInnerHTML={{ __html: qr.createSvgTag({ cellSize: 4, margin: 0 }) }}
+    />
+  );
+}
+
 // Actualizaciones de Steam en espera, con «Descargar todo».
 function Downloads() {
-  const [n, setN] = useState(pendingDownloads().filter((i) => !i.active && i.queue_index < 0).length);
+  const waiting = () => pendingDownloads().filter((i) => !i.active && i.queue_index < 0).length;
+  const [n, setN] = useState(waiting());
   useEffect(() => {
-    const id = setInterval(() => setN(pendingDownloads().filter((i) => !i.active && i.queue_index < 0).length), 3000);
+    const id = setInterval(() => setN(waiting()), 3000);
     return () => clearInterval(id);
   }, []);
   if (!n) return null;
   return (
-    <PanelSection title="Descargas">
+    <PanelSection title={t("downloads")}>
       <PanelSectionRow>
         <ButtonItem
           layout="below"
           onClick={async () => {
             const c = await downloadAll();
-            toaster.toast({ title: "DeckHub · Descargas", body: `${c} descargas en cola` });
+            toaster.toast({ title: `DeckHub · ${t("downloads")}`, body: t("queued", { n: c }) });
           }}
         >
-          Descargar todo ({n})
+          {t("downloadAll", { n })}
         </ButtonItem>
       </PanelSectionRow>
     </PanelSection>
   );
 }
 
-// Dirección del panel web y token, para entrar desde el PC o el móvil.
+// Panel web: abrirlo en el Deck, o desde el PC/móvil con el QR y el token.
 function Access() {
   const [access, setAccess] = useState<AccessInfo | null>(null);
   const [show, setShow] = useState(false);
@@ -52,10 +72,7 @@ function Access() {
   const toggle = async (on: boolean) => {
     setBusy(true);
     const r = await setLanAccess(on);
-    toaster.toast({
-      title: "DeckHub",
-      body: r.ok ? (on ? "Panel abierto a la red (puerto 8765)" : "Panel solo accesible desde el Deck") : r.error ?? "Error",
-    });
+    toaster.toast({ title: "DeckHub", body: r.ok ? t(on ? "lanOn" : "lanOff") : r.error ?? t("error") });
     // El daemon se reinicia para escuchar en la nueva dirección.
     setTimeout(async () => {
       setAccess(await getAccess());
@@ -64,29 +81,33 @@ function Access() {
   };
 
   return (
-    <PanelSection title="Panel web">
+    <PanelSection title={t("dashboard")}>
+      <PanelSectionRow>
+        <ButtonItem layout="below" onClick={() => Navigation.NavigateToExternalWeb("http://127.0.0.1:8765")}>
+          {t("openHere")}
+        </ButtonItem>
+      </PanelSectionRow>
       <PanelSectionRow>
         <ToggleField
-          label="Acceso desde la red"
-          description="Puerto 8765 para el PC o el móvil"
+          label={t("networkAccess")}
+          description={t("networkAccessDesc")}
           checked={access?.lan_access ?? false}
           disabled={busy || access?.lan_access == null}
           onChange={toggle}
         />
       </PanelSectionRow>
-      {access?.lan_access && (
+      {access?.lan_access && access.url && (
         <PanelSectionRow>
-          <Field label="Dirección" bottomSeparator="none">
-            {access.url}
-          </Field>
+          <Field label={t("scanQr")} description={access.url} bottomSeparator="none" />
+          <QrCode text={access.url} />
         </PanelSectionRow>
       )}
       <PanelSectionRow>
         {show ? (
-          <Field label="Token" description={access?.token || "aún no generado"} bottomSeparator="none" />
+          <Field label={t("token")} description={access?.token || t("tokenMissing")} bottomSeparator="none" />
         ) : (
           <ButtonItem layout="below" onClick={() => setShow(true)}>
-            Mostrar token
+            {t("showToken")}
           </ButtonItem>
         )}
       </PanelSectionRow>
@@ -107,19 +128,17 @@ function Drives({ disks }: { disks: any[] }) {
     setBusy(p.path);
     const r = await setMounted(p.path, on);
     setBusy(null);
-    toaster.toast({
-      title: "DeckHub",
-      body: r.ok ? `${p.label ?? p.name} ${on ? "montada" : "desmontada"}` : r.error ?? "Error",
-    });
+    const name = p.label ?? p.name;
+    toaster.toast({ title: "DeckHub", body: r.ok ? t(on ? "mounted" : "unmounted", { name }) : r.error ?? t("error") });
   };
 
   return (
-    <PanelSection title="Unidades">
+    <PanelSection title={t("drives")}>
       {parts.map((p: any) => (
         <PanelSectionRow key={p.path}>
           <ToggleField
             label={p.label ?? p.name}
-            description={`${p.fstype} · ${gb(p.size)}${p.used != null ? ` · ${gb(p.used)} usados` : ""}`}
+            description={`${p.fstype} · ${gb(p.size)}${p.used != null ? ` · ${t("used", { size: gb(p.used) })}` : ""}`}
             checked={!!p.mountpoint}
             disabled={busy === p.path}
             onChange={(on) => toggle(p, on)}
@@ -129,10 +148,6 @@ function Drives({ disks }: { disks: any[] }) {
     </PanelSection>
   );
 }
-
-const gb = (b?: number) =>
-  b == null ? "—" : b >= 1e12 ? `${(b / 1e12).toFixed(2)} TB` : `${(b / 1e9).toFixed(1)} GB`;
-const v = (x: unknown, unit = "") => (x == null ? "—" : `${x}${unit}`);
 
 function Content() {
   const [status, setStatus] = useState<Status | null>(null);
@@ -151,22 +166,22 @@ function Content() {
     };
   }, []);
 
-  if (!status) return <PanelSection title="DeckHub">Cargando…</PanelSection>;
+  if (!status) return <PanelSection title="DeckHub">{t("loading")}</PanelSection>;
   if (!status.ok)
     return (
       <PanelSection title="DeckHub">
         <PanelSectionRow>
-          <Field label="Daemon no disponible" description={status.error} />
+          <Field label={t("daemonDown")} description={status.error} />
         </PanelSectionRow>
         <PanelSectionRow>
           <ButtonItem
             layout="below"
             onClick={async () => {
               const r = await restartDaemon();
-              toaster.toast({ title: "DeckHub", body: r.ok ? "Daemon reiniciado" : r.error ?? "Error" });
+              toaster.toast({ title: "DeckHub", body: r.ok ? t("daemonRestarted") : r.error ?? t("error") });
             }}
           >
-            Reiniciar daemon
+            {t("restartDaemon")}
           </ButtonItem>
         </PanelSectionRow>
       </PanelSection>
@@ -177,67 +192,49 @@ function Content() {
 
   return (
     <>
-      <PanelSection title="Sistema">
+      <PanelSection title={t("system")}>
         <PanelSectionRow>
-          <Field label="CPU" bottomSeparator="none">
-            {v(s.cpu?.percent, "%")} · {v(s.cpu?.temp, " °C")}
+          <Field label="CPU · GPU" bottomSeparator="none">
+            {v(s.cpu?.percent, "%")} · {v(s.gpu?.percent, "%")} · {v(s.cpu?.temp, " °C")}
           </Field>
         </PanelSectionRow>
         <PanelSectionRow>
-          <Field label="GPU" bottomSeparator="none">
-            {v(s.gpu?.percent, "%")} · {v(s.gpu?.mhz, " MHz")} · {v(s.gpu?.temp, " °C")}
+          <Field label={t("battery")} bottomSeparator="none">
+            {v(s.battery?.percent, "%")} · {v(s.battery?.watts, " W")}
           </Field>
         </PanelSectionRow>
         <PanelSectionRow>
-          <Field label="Consumo / TDP" bottomSeparator="none">
-            {v(s.gpu?.watts, " W")} / {v(s.tdp?.watts, " W")}
+          <Field label={t("powerTdp")} bottomSeparator="none">
+            {v(s.gpu?.watts, " W")} / {v(s.tdp?.watts, " W")} · {t("fan")} {v(s.fan_rpm, " RPM")}
           </Field>
         </PanelSectionRow>
         <PanelSectionRow>
-          <Field label="RAM" bottomSeparator="none">
-            {gb(s.memory?.used)} / {gb(s.memory?.total)}
-          </Field>
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <Field label="Ventilador" bottomSeparator="none">
-            {v(s.fan_rpm, " RPM")}
-          </Field>
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <Field label="Batería" bottomSeparator="none">
-            {v(s.battery?.percent, "%")} · {s.battery?.status ?? "—"} · {v(s.battery?.watts, " W")}
+          <Field label="RAM · /home" bottomSeparator="none">
+            {gb(s.memory?.used)} / {gb(s.memory?.total)} · {home ? t("free", { size: gb(home.free), pct: home.percent }) : "—"}
           </Field>
         </PanelSectionRow>
       </PanelSection>
 
       <Downloads />
 
-      <Drives disks={st.disks ?? []} />
-
-      <PanelSection title="Almacenamiento y red">
-        <PanelSectionRow>
-          <Field label="/home" bottomSeparator="none">
-            {home ? `${gb(home.free)} libres (${home.percent}%)` : "—"}
-          </Field>
-        </PanelSectionRow>
-        <PanelSectionRow>
-          <Field label="WiFi" bottomSeparator="none">
-            {n.wifi ? `${n.wifi.ssid} · ${n.wifi.signal}%` : "desconectado"}
-          </Field>
-        </PanelSectionRow>
-      </PanelSection>
-
       <Access />
 
-      <PanelSection title="Steam">
+      <Drives disks={st.disks ?? []} />
+
+      <PanelSection title={t("steam")}>
         <PanelSectionRow>
-          <Field label="Jugando" bottomSeparator="none">
-            {sm.running ? sm.running.name ?? `AppID ${sm.running.appid}` : "nada"}
+          <Field label={t("playing")} bottomSeparator="none">
+            {sm.running ? sm.running.name ?? `AppID ${sm.running.appid}` : t("nothing")}
           </Field>
         </PanelSectionRow>
         <PanelSectionRow>
-          <Field label="Instalados" bottomSeparator="none">
+          <Field label={t("installed")} bottomSeparator="none">
             {sm.games?.length ?? 0} · {gb(sm.total_size)}
+          </Field>
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <Field label={t("wifi")} bottomSeparator="none">
+            {n.wifi ? `${n.wifi.ssid} · ${n.wifi.signal}%` : t("disconnected")}
           </Field>
         </PanelSectionRow>
       </PanelSection>
@@ -246,6 +243,7 @@ function Content() {
 }
 
 export default definePlugin(() => {
+  initLanguage();
   const stopSync = startShortcutSync();
   const stopLibrary = startLibraryReport();
   const stopDownloads = startDownloads();

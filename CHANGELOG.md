@@ -1,5 +1,12 @@
 # Cambios
 
+## 0.10.0 (2026-10-29)
+
+- Multi-idioma: el panel y el plugin usan el idioma de Steam (español e inglés); selector 🌐 en el panel. Los idiomas son archivos JSON (`py_modules/deckhub/web/i18n/`), ver `docs/translating.md`.
+- Panel: navegación agrupada (barra lateral en pantallas anchas), tarjeta de «Primeros pasos» y el token ya no se pide solo por abrir la página.
+- Plugin: secciones reordenadas, código QR del panel y botón para abrirlo en el Deck.
+- Guía de instalación para usuarios (README en inglés y español, `docs/install.md`), enlace fijo a la última versión e imagen para la tienda.
+
 ## 0.9.1 (2026-10-29)
 
 - «Descargar todo» ya inicia las descargas: las llamadas a Steam llevan el equipo (este Deck), como hace la propia interfaz de Steam. Adelanta también las programadas por la restricción horaria de actualizaciones.

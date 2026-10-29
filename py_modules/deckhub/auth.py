@@ -10,7 +10,7 @@ from aiohttp import web
 from . import config
 
 COOKIE = "deckhub_token"
-PUBLIC_GET = {"/", "/api", "/api/auth"}
+PUBLIC_GET = {"/", "/api", "/api/auth", "/api/i18n"}
 PUBLIC_MODULES = {"system", "storage", "network", "steam", "services"}
 
 

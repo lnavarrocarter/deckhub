@@ -8,9 +8,10 @@
       "monitor",
       "system",
       "emulation",
-      "storage"
+      "storage",
+      "themes"
     ],
-    "description": "Supervisor y centro retro: sistema, microSD, archivos, emuladores, accesos directos con portadas, partidas y trucos, con panel web.",
-    "image": ""
+    "description": "System dashboard and retro hub: microSD and files, emulators, Steam shortcuts with artwork, saves, cheats, themes, deals and price alerts, with a web dashboard. Multi-language.",
+    "image": "https://raw.githubusercontent.com/lnavarrocarter/deckhub/main/assets/store.png"
   }
 }

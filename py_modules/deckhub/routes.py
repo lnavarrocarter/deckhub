@@ -465,6 +465,12 @@ async def settings_set(request):
             except Exception as e:
                 raise ValueError(f"No pude validar la clave de IsThereAnyDeal: {e}")
         cfg["itad_key"] = key
+    if "ui_lang" in b:
+        from . import i18n
+        lang = str(b["ui_lang"])
+        if lang != "auto" and lang not in {l["code"] for l in i18n.available()}:
+            raise ValueError(f"idioma no disponible: {lang}")
+        cfg["ui_lang"] = lang
     if "store_country" in b:
         cc = str(b["store_country"]).strip().upper()
         if cc and (len(cc) != 2 or not cc.isalpha()):

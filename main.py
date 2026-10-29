@@ -221,6 +221,14 @@ class Plugin:
         except Exception:
             return False
 
+    async def get_language(self):
+        """Idioma del panel (el elegido en Ajustes o el de Steam): «es», «en»…"""
+        try:
+            with urllib.request.urlopen(DAEMON + "/api/i18n", timeout=5) as r:
+                return json.load(r).get("lang")
+        except Exception:
+            return None
+
     async def get_access(self):
         """URL del panel y token, para entrar desde el PC o el móvil sin SSH."""
         try:

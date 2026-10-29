@@ -3,6 +3,7 @@
 import { callable, routerHook, toaster } from "@decky/api";
 import { DialogButton, Focusable } from "@decky/ui";
 import { useEffect, useState } from "react";
+import { t } from "./i18n";
 
 declare const SteamClient: any;
 declare const appStore: any;
@@ -83,13 +84,13 @@ function DownloadAllBar() {
         onClick={async () => {
           setBusy(true);
           const n = await downloadAll();
-          toaster.toast({ title: "DeckHub · Descargas", body: `${n} descargas en cola` });
+          toaster.toast({ title: `DeckHub · ${t("downloads")}`, body: t("queued", { n }) });
           setBusy(false);
         }}
       >
-        Descargar todo ({waiting.length})
+        {t("downloadAll", { n: waiting.length })}
       </DialogButton>
-      <span style={{ opacity: 0.7 }}>{gb(total)} pendientes · DeckHub</span>
+      <span style={{ opacity: 0.7 }}>{t("pendingSize", { size: gb(total) })} · DeckHub</span>
     </Focusable>
   );
 }

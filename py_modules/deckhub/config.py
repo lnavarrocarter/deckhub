@@ -17,6 +17,7 @@ DEFAULTS = {
     "lan_access": True,       # panel accesible desde la red (si no, solo 127.0.0.1)
     "store_country": "",      # país de la tienda de Steam (vacío = detectar por la moneda)
     "itad_key": "",           # clave de IsThereAnyDeal para el mínimo histórico (opcional)
+    "ui_lang": "auto",        # idioma del panel y del plugin: auto (el de Steam) o un código
 }
 
 

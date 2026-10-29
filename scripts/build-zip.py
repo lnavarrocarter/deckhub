@@ -24,6 +24,9 @@ def main():
             for p in sorted((ROOT / tree).rglob("*")):
                 if p.is_file() and "__pycache__" not in p.parts:
                     z.write(p, f"DeckHub/{p.relative_to(ROOT).as_posix()}")
+    # Copia con nombre fijo: releases/latest/download/DeckHub.zip apunta siempre a la última.
+    latest = out.with_name("DeckHub.zip")
+    latest.write_bytes(out.read_bytes())
     print(out)
 
 

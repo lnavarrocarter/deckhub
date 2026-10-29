@@ -2,6 +2,7 @@
 // Corre mientras Decky esté cargado, no solo con el panel abierto.
 import { callable, toaster } from "@decky/api";
 import { downloadAll } from "./downloads";
+import { t } from "./i18n";
 import { syncStoreUserdata } from "./library";
 
 declare const SteamClient: any;
@@ -120,16 +121,16 @@ async function applyActions() {
         await cssLoader("reset");
         await cssLoader("set_theme_state", { name: a.name, state: true });
         toaster.toast({
-          title: "DeckHub · Temas",
-          body: a.deps ? `${a.name} instalado con ${a.deps} temas` : `${a.name} instalado`,
+          title: `DeckHub · ${t("themes")}`,
+          body: a.deps ? t("themeInstalledDeps", { name: a.name, n: a.deps }) : t("themeInstalled", { name: a.name }),
         });
         cssChanged = true;
       } else if (a.type === "downloads_all") {
         const n = await downloadAll();
-        toaster.toast({ title: "DeckHub · Descargas", body: n ? `${n} descargas en cola` : "No hay descargas pendientes" });
+        toaster.toast({ title: `DeckHub · ${t("downloads")}`, body: n ? t("queued", { n }) : t("noDownloads") });
       } else if (a.type === "store_sync") {
         const added = await syncStoreUserdata();
-        toaster.toast({ title: "DeckHub · Ofertas", body: `Lista de deseados sincronizada${added ? ` (${added} nuevos)` : ""}` });
+        toaster.toast({ title: `DeckHub · ${t("deals")}`, body: added ? t("wishlistSyncedNew", { n: added }) : t("wishlistSynced") });
       } else if (a.type === "steam") {
         await steamAction(a);
       } else if (a.type === "css_state") {
@@ -137,15 +138,22 @@ async function applyActions() {
         cssChanged = true;
       }
     } catch (e: any) {
-      toaster.toast({ title: "DeckHub", body: `Acción ${a.type} falló: ${e?.message ?? e}` });
+      toaster.toast({ title: "DeckHub", body: t("actionFailed", { type: a.type, msg: String(e?.message ?? e) }) });
     }
   }
   if (cssChanged) await refreshCssLoaderUI().catch((e) => console.warn("DeckHub: CSS Loader", e));
 }
 
-type StoreNotification = { id: string; appid: number; title: string; body: string };
+type StoreNotification = { id: string; appid: number; title: string; body: string; reasons?: string[]; discount?: number };
 const getStoreNotifications = callable<[], StoreNotification[]>("get_store_notifications");
 const ackStoreNotification = callable<[string], boolean>("ack_store_notification");
+
+function alertText(n: StoreNotification) {
+  const r = n.reasons ?? [];
+  if (!r.length) return n.body;
+  const text = r.length > 1 ? t("alertBoth") : t(r[0] === "low" ? "alertLow" : "alertTarget");
+  return n.discount ? `${text} (-${n.discount}%)` : text;
+}
 
 // Alertas de precio de la pestaña Ofertas: notificación de Steam que abre la tienda.
 async function applyStoreNotifications() {
@@ -153,7 +161,7 @@ async function applyStoreNotifications() {
     await ackStoreNotification(n.id);
     toaster.toast({
       title: `💰 ${n.title}`,
-      body: n.body,
+      body: alertText(n),
       duration: 8000,
       onClick: () => SteamClient.URL.ExecuteSteamURL(`steam://store/${n.appid}`),
     });
@@ -229,9 +237,9 @@ export async function syncShortcuts() {
     await applyStoreNotifications();
     if (added || removed || art) {
       const parts = [
-        added && `${added} juegos añadidos`,
-        removed && `${removed} quitados`,
-        art && `${art} portadas`,
+        added && t("gamesAdded", { n: added }),
+        removed && t("gamesRemoved", { n: removed }),
+        art && t("artApplied", { n: art }),
       ].filter(Boolean);
       toaster.toast({ title: "DeckHub · Steam", body: parts.join(", ") });
     }

@@ -1,81 +1,93 @@
 # DeckHub
 
-Supervisor y centro retro para el **Steam Deck**: un servicio en el propio Deck, un panel web para manejarlo desde el PC o el móvil, y un plugin de [Decky Loader](https://decky.xyz) para verlo desde el menú de acceso rápido.
+![DeckHub](assets/store.png)
 
-DeckHub cubre lo que Decky no toca: unidades y microSD, archivos, paquetes Flatpak, emuladores, accesos directos de Steam con portadas, partidas guardadas y trucos.
+**System dashboard and retro hub for the Steam Deck**, as a [Decky Loader](https://decky.xyz) plugin with a web dashboard you can open from your PC, your phone or the Deck itself.
 
-> **Estado:** versión 0.3 (en desarrollo). Probado en SteamOS 3.9 (Steam Deck LCD) con Decky Loader 3.3. Se instala como un plugin de Decky desde un zip; aún no está en la tienda de Decky ([hoja de ruta](docs/roadmap.md)).
+> 🇪🇸 [Versión en español más abajo](#español)
 
-*English summary below.*
+- **Library**: Steam games and emulator ROMs in one place, with per-game details: playtime, ProtonDB, launch options, Proton version, hide, play.
+- **Artwork**: pick covers, heroes and logos from SteamGridDB for any game.
+- **Emulation**: install and configure PCSX2, Eden, RetroArch and more; add ROMs to Steam in one click; saves backup and cheats.
+- **Customize**: Game Mode themes (via CSS Loader, installed for you), boot videos and wallpapers with recommended downloads.
+- **Deals**: track your wishlist prices, historical lows and get notified on the Deck.
+- **System**: microSD/USB mounting, file manager, Flatpak packages, "Download all" for pending Steam updates.
+- **Multi-language**: follows your Steam language (English and Spanish included; [add yours](docs/translating.md)).
 
-## Funciones
+DeckHub never downloads games, BIOS, firmware or keys, and never buys anything or touches your Steam account.
 
-| Módulo | Qué hace |
-|---|---|
-| **Resumen** | CPU, GPU, temperatura, batería, RAM, red, servicios y estado de Steam en tiempo real. |
-| **Unidades y espacio** | Monta/desmonta la microSD y discos USB, automontaje al arrancar, análisis de qué ocupa espacio. |
-| **Archivos** | Explorador web: subir, descargar, copiar, mover, renombrar. Borrar siempre manda a la papelera. |
-| **Paquetes** | Buscar, instalar y desinstalar aplicaciones Flatpak. |
-| **Juegos** | Detecta ROMs de PS2 y Switch (y otras consolas), agrupa actualizaciones y DLC de Switch, crea accesos directos en Steam con un clic. |
-| **Portadas** | Descarga automáticamente grid, hero, logo y banner desde SteamGridDB (con tu propia clave API). |
-| **Emuladores** | Instala y configura PCSX2, Eden, RetroArch, Dolphin, PPSSPP y más; instala firmware y llaves de Switch **que tú aportas**. |
-| **Partidas** | Copias de seguridad diarias y manuales en zip, restauración y migración de yuzu → Eden. |
-| **Trucos** | Gestiona `.pnach` de PCSX2 y trucos de Eden: pegar, activar, desactivar. |
-| **Plugin de Decky** | Estado del sistema en el menú rápido, montar la microSD con un toque y aplicar los accesos directos y portadas en Steam. |
+## Install
 
-## Cómo está hecho
+You need **Decky Loader**. If you don't have it yet: switch to Desktop Mode, open [decky.xyz](https://decky.xyz) in the browser, download the installer and run it; then go back to Game Mode.
 
-```
-PC / móvil ──HTTP──▶ daemon (Python, aiohttp, :8765) ◀──── plugin de Decky (React + Python)
-                         │                                   │
-                         ├─ sistema, discos, Flatpak         └─ SteamClient: accesos directos,
-                         ├─ emuladores y ROMs                   colecciones y portadas
-                         └─ SteamGridDB, copias de seguridad
-```
+1. On the Deck, press **⋯** (Quick Access) → **Decky** (plug icon) → ⚙ **Settings**.
+2. In **General**, turn on **Developer mode**.
+3. Open the new **Developer** section → **Install plugin from URL** and paste:
 
-El repositorio es un plugin de Decky: al cargarse, el plugin instala y arranca el daemon como servicio `systemd --user`.
+   ```
+   https://github.com/lnavarrocarter/deckhub/releases/latest/download/DeckHub.zip
+   ```
 
-- [`src/`](src): interfaz del menú rápido (TypeScript/React).
-- [`main.py`](main.py): backend del plugin; instala el daemon y hace de puente.
-- [`py_modules/deckhub/`](py_modules/deckhub): el daemon (Python + `aiohttp`, ambos incluidos en SteamOS) y el panel web.
-- [`scripts/`](scripts): despliegue de desarrollo y empaquetado del zip.
-- [`docs/`](docs): documentación.
+   (Or download that zip and use **Install plugin from ZIP file**.)
+4. Confirm the install. DeckHub appears in the Quick Access menu; it sets up its background service by itself.
+5. Open DeckHub → **Web dashboard**:
+   - **Open the dashboard on the Deck**, or
+   - turn on **Network access** and scan the **QR code** with your phone (or type the address on your PC).
+6. The first time you change something, the dashboard asks for the **token**: press **Show token** in the plugin and paste it.
 
-Detalles en [docs/arquitectura.md](docs/arquitectura.md).
+**Update**: install the new zip the same way; your settings are kept.
+**Uninstall**: Decky → Settings → Plugins → DeckHub → Uninstall. Your settings and backups stay in `~/.config/deckhub` and `~/DeckHub`.
 
-## Instalación
+More details and troubleshooting: [docs/install.md](docs/install.md).
 
-1. Descarga `DeckHub-x.y.z.zip` de [Releases](../../releases).
-2. En el Deck: Decky → Ajustes → General → activa **Modo desarrollador**; luego Decky → Ajustes → Desarrollador → **Instalar plugin desde ZIP**.
-3. Abre DeckHub en el menú rápido: la sección **Panel web** muestra la dirección y el token para entrar desde el PC o el móvil.
+## Documentation
 
-Guía completa (y despliegue para desarrollo) en [docs/instalacion.md](docs/instalacion.md).
+- [Installation](docs/install.md) · [Instalación](docs/instalacion.md)
+- [Features](docs/modulos.md) (Spanish)
+- [Architecture](docs/arquitectura.md) · [HTTP API](docs/api.md) (Spanish)
+- [Translating DeckHub](docs/translating.md)
+- [Roadmap](docs/roadmap.md) · [Changelog](CHANGELOG.md)
 
-## Documentación
+## License
 
-- [Instalación](docs/instalacion.md)
-- [Arquitectura](docs/arquitectura.md)
-- [Módulos y uso](docs/modulos.md)
-- [API HTTP](docs/api.md)
-- [Hoja de ruta](docs/roadmap.md)
-- [Cambios](CHANGELOG.md)
-
-## Aviso legal
-
-DeckHub **no incluye ni descarga** juegos, BIOS, firmware ni llaves. Solo coloca en su sitio los archivos que tú obtienes de tus propias consolas y copias de juegos. Usa emuladores y contenido de forma legal en tu país.
-
-DeckHub no está afiliado a Valve, Nintendo, Sony ni a los proyectos de los emuladores.
-
-## Licencia
-
-[MIT](LICENSE)
+[MIT](LICENSE). Not affiliated with Valve, Nintendo, Sony or any emulator project. Use emulators and content legally in your country.
 
 ---
 
-## English summary
+## Español
 
-**DeckHub** is a system supervisor and retro-gaming hub for the Steam Deck. It runs a small Python service on the Deck with a web dashboard (use it from your PC or phone) plus a Decky Loader plugin for the Quick Access menu.
+**Supervisor y centro retro para Steam Deck**: un plugin de [Decky Loader](https://decky.xyz) con un panel web que puedes abrir desde el PC, el móvil o el propio Deck.
 
-It handles what Decky doesn't: microSD/USB mounting and automount, a web file manager, Flatpak packages, emulator install/config (PCSX2, Eden, RetroArch…), one-click Steam shortcuts with automatic SteamGridDB artwork, Switch update/DLC grouping, save backups and cheats.
+- **Biblioteca**: juegos de Steam y ROMs de emulador juntos, con ficha por juego: tiempo jugado, ProtonDB, opciones de lanzamiento, versión de Proton, ocultar, jugar.
+- **Carátulas**: portadas, fondos y logos de SteamGridDB para cualquier juego.
+- **Emulación**: instala y configura PCSX2, Eden, RetroArch y más; agrega ROMs a Steam con un clic; respaldos de partidas y trucos.
+- **Personalización**: temas del modo juego (con CSS Loader, que se instala solo), videos de arranque y fondos con descargas recomendadas.
+- **Ofertas**: sigue los precios de tu lista de deseados, el mínimo histórico y recibe avisos en el Deck.
+- **Sistema**: microSD/USB, archivos, paquetes Flatpak, «Descargar todo» para las actualizaciones pendientes de Steam.
+- **Multi-idioma**: usa el idioma de tu Steam (español e inglés incluidos).
 
-Install it as a Decky plugin from the zip in Releases (Decky → Developer → Install plugin from ZIP); the plugin sets up the background service by itself. It does **not** ship or download games, BIOS, firmware or keys; you supply your own dumps. The UI is currently in Spanish. Not yet on the Decky store; see the [roadmap](docs/roadmap.md).
+DeckHub no descarga juegos, BIOS, firmware ni llaves, y nunca compra nada ni toca tu cuenta de Steam.
+
+### Instalación
+
+Necesitas **Decky Loader**. Si no lo tienes: entra al modo escritorio, abre [decky.xyz](https://decky.xyz) en el navegador, descarga el instalador y ejecútalo; luego vuelve al modo juego.
+
+1. En el Deck, pulsa **⋯** (acceso rápido) → **Decky** (icono de enchufe) → ⚙ **Ajustes**.
+2. En **General**, activa el **Modo desarrollador**.
+3. Abre la nueva sección **Desarrollador** → **Instalar plugin desde URL** y pega:
+
+   ```
+   https://github.com/lnavarrocarter/deckhub/releases/latest/download/DeckHub.zip
+   ```
+
+   (O descarga ese zip y usa **Instalar plugin desde archivo ZIP**.)
+4. Confirma la instalación. DeckHub aparece en el menú de acceso rápido y prepara su servicio solo.
+5. Abre DeckHub → **Panel web**:
+   - **Abrir el panel en el Deck**, o
+   - activa **Acceso desde la red** y escanea el **código QR** con el móvil (o escribe la dirección en el PC).
+6. La primera vez que cambies algo, el panel pide el **token**: pulsa **Mostrar token** en el plugin y pégalo.
+
+**Actualizar**: instala el zip nuevo igual; tus ajustes se conservan.
+**Desinstalar**: Decky → Ajustes → Plugins → DeckHub → Desinstalar. Ajustes y respaldos quedan en `~/.config/deckhub` y `~/DeckHub`.
+
+Más detalles y solución de problemas: [docs/instalacion.md](docs/instalacion.md).

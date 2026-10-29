@@ -9,9 +9,9 @@ La tienda ([decky-plugin-database](https://github.com/SteamDeckHomebrew/decky-pl
 - [x] **Empaquetar el daemon dentro del plugin**: incluir `daemon/deckhub` en el zip del plugin y que `main.py` lo arranque (como proceso hijo, o instalando el servicio `systemd --user` en `_main`) y lo detenga en `_unload` / `_uninstall`.
 - [x] Ajustar rutas: el código pasa de `~/deckhub` a la carpeta del plugin (`DECKY_PLUGIN_DIR`); los datos siguen en `~/.config/deckhub`.
 - [x] Quitar el flag `debug` de `plugin.json`.
-- [ ] Añadir imagen de portada para la tienda.
+- [x] Imagen de portada para la tienda (`assets/store.png`).
 - [x] Mostrar la dirección y el token del panel en el plugin (sin SSH).
-- [ ] Código QR del panel en el plugin.
+- [x] Código QR del panel y botón para abrirlo en el Deck.
 - [x] Regla sudo solo para desarrollo (instalado desde zip no hace falta).
 - [x] GitHub Actions genera el zip en cada etiqueta `v*`.
 - [ ] Comprobar el build con la CLI oficial de Decky (la que usa la tienda).
@@ -23,7 +23,7 @@ La tienda ([decky-plugin-database](https://github.com/SteamDeckHomebrew/decky-pl
 
 - [ ] Hacer público el repositorio.
 - [ ] Capturas y GIF del panel y del menú rápido en el README.
-- [ ] Interfaz en inglés (i18n español/inglés).
+- [x] Multi-idioma: español e inglés, según el idioma de Steam; archivos JSON para añadir más.
 - [ ] Guía de instalación manual con el zip de Releases para quien no quiera esperar a la tienda.
 
 ## Control total del Deck desde el hub

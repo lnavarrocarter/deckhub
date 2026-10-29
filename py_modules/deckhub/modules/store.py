@@ -136,8 +136,10 @@ async def _itad_lows(session, appids, cc, key):
     return out
 
 
-def _notify(d, appid, t, text):
+def _notify(d, appid, t, text, reasons=(), discount=0):
+    # «reasons» (target/low) permite al plugin mostrar el texto en el idioma de la consola.
     d["notifications"].append({"id": f"{appid}-{int(time.time())}", "appid": appid, "title": t, "body": text,
+                               "reasons": list(reasons), "discount": discount,
                                "time": time.time(), "delivered": False})
     d["notifications"] = d["notifications"][-50:]
 
@@ -155,16 +157,18 @@ def _check_alerts(d, appid, t):
         return
     final = p["final"]
     low = _low(t)
-    reasons = []
+    codes = []
     if t.get("target") and final <= t["target"]:
-        reasons.append("bajó de tu precio objetivo")
+        codes.append("target")
     if t.get("notify_low") and low and final <= low and p.get("discount"):
-        reasons.append("está en su mínimo histórico")
-    key = f"{final}:{','.join(reasons)}"
-    if reasons and t.get("alerted") != key:
+        codes.append("low")
+    key = f"{final}:{','.join(codes)}"
+    if codes and t.get("alerted") != key:
         t["alerted"] = key
+        text = {"target": "bajó de tu precio objetivo", "low": "está en su mínimo histórico"}
         _notify(d, appid, f"{t['name']} · {p.get('formatted')}",
-                f"{' y '.join(reasons).capitalize()}" + (f" (-{p['discount']}%)" if p.get("discount") else ""))
+                " y ".join(text[c] for c in codes).capitalize() + (f" (-{p['discount']}%)" if p.get("discount") else ""),
+                codes, p.get("discount") or 0)
 
 
 async def refresh(appids=None):

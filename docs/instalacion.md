@@ -9,15 +9,26 @@ DeckHub es un plugin de [Decky Loader](https://decky.xyz). Al cargarse, el plugi
 
 El daemon usa el Python 3 y el `aiohttp` que ya trae SteamOS.
 
-## Instalar desde el zip (usuarios)
+## Instalar (usuarios)
 
-1. Descarga `DeckHub-x.y.z.zip` de la página de **Releases** del repositorio.
-2. En el Deck: menú rápido → Decky → ⚙ Ajustes → General → activa **Modo desarrollador**.
-3. Decky → Ajustes → **Desarrollador** → «Instalar plugin desde ZIP» (o «desde URL» pegando el enlace del zip de Releases).
-4. Abre DeckHub en el menú rápido. La sección **Panel web** muestra la dirección (`http://<ip-del-deck>:8765`) y el botón **Mostrar token**.
-5. En el PC o el móvil, abre esa dirección y pega el token cuando el panel lo pida.
+Si no tienes Decky Loader: modo escritorio → abre [decky.xyz](https://decky.xyz), descarga el instalador, ejecútalo («Install latest release») y vuelve al modo juego.
 
-Para actualizar, instala el zip nuevo encima: el plugin detecta la versión y reinicia el daemon.
+1. **⋯** (acceso rápido) → **Decky** → ⚙ **Ajustes** → **General** → activa **Modo desarrollador**.
+2. **Desarrollador** → **Instalar plugin desde URL** y pega:
+
+   ```
+   https://github.com/lnavarrocarter/deckhub/releases/latest/download/DeckHub.zip
+   ```
+
+   O descarga el zip de la página de **Releases** y usa **Instalar plugin desde archivo ZIP**.
+3. Abre DeckHub en el menú rápido → **Panel web**:
+   - **Abrir el panel en el Deck** lo abre en el navegador de Steam.
+   - **Acceso desde la red** abre el puerto 8765 en tu red: escanea el **código QR** con el móvil o escribe la dirección en el PC.
+   - **Mostrar token**: el panel lo pide la primera vez que cambias algo.
+
+El idioma sigue al de Steam (Ajustes → Idioma); se puede cambiar con el selector 🌐 del panel.
+
+Para actualizar, instala el zip nuevo encima: el plugin detecta la versión y reinicia el servicio.
 
 ## Desinstalar
 
