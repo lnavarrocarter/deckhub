@@ -1,5 +1,9 @@
 # Cambios
 
+## 0.13.1 (2026-10-29)
+
+- El servicio de DeckHub queda habilitado después de actualizar (antes, la desinstalación de la versión anterior lo dejaba deshabilitado y solo arrancaba cuando Decky cargaba el plugin).
+
 ## 0.13.0 (2026-10-29)
 
 - Actualizaciones automáticas: DeckHub revisa GitHub Releases cada 6 horas, avisa en el menú rápido y en Ajustes, y se actualiza con un toque (Decky lo instala con su confirmación y comprueba la huella SHA-256 del zip). DeckHub no está en la tienda de Decky: su política no acepta código escrito con IA.
